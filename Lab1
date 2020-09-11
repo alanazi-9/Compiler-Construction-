@@ -1,1 +1,109 @@
-Test
+%{
+#include <stdio.h>
+
+#define MAX 50
+
+struct checkedTokens{
+   char lexem[MAX];
+   struct checkedTokens *next;
+};
+
+struct checkedTokens *first;
+struct checkedTokens *current;
+struct checkedTokens *new;
+
+enum KEYWORDS{DEFINEFUN = 1, GCD, INT, IF, LET, EVAL, GETINT, SEMICOLON};
+enum IDs{A = 9, B, C};
+enum OPs{ EQUAL = 12, GREATERTHAN, MINUS};
+enum PARENTHESIS{ LEFT = 13, RIGHT};
+enum TOKENS{ KEWORD = 17, ID, OP, PARENTHESIS};
+%}
+
+%option yylineno
+
+%%
+
+[\t\n] {}
+[;] {return SEMICOLON;}
+[-+*/^=] {return OP;}
+[()] {return PARENTHESIS;}
+"define-fun" {return DEFINEFUN;}
+"gcd" {return GCD;}
+%%
+
+int check(char *token){
+struct checkedTokens* searcher = first;   
+   
+if (strcmp(searcher->lexem, token) != 0 && searcher->next == NULL){
+printf("ifsearcher\n");                
+return 1; }
+
+ while (searcher != NULL) 
+    { 
+        if (strcmp(searcher->lexem, token) == 0){ 
+		return 0;
+		printf("innerloop\n"); }
+        searcher = searcher->next; 
+    } 
+    return 1; 
+}
+
+int main(int argc, char* argv[]) {
+
+int token;
+token = yylex();
+int flag=2;
+
+first = (struct checkedTokens *)malloc(sizeof(struct checkedTokens));
+current = (struct checkedTokens *)malloc(sizeof(struct checkedTokens));
+
+strcpy(current->lexem, yytext);
+current->next = NULL;
+first=current;
+
+flag = check(current->lexem);
+printf("%d\n", flag);
+while(token){
+    if(token == DEFINEFUN && check(current->lexem) == 1){
+    	printf("%s: ", yytext);
+	new = (struct checkedTokens *)malloc(sizeof(struct checkedTokens));
+	strcpy(new->lexem, yytext);
+	current->next = new;
+	new->next = NULL;
+	while(token){
+	if(token == DEFINEFUN){
+		printf("%u", yylineno);
+		token = yylex();
+      }
+	else token = yylex();
+      }
+    printf("\n");
+    }
+
+     if(token == GCD && check(yytext) == 1){
+        printf("%s: ", yytext);
+	new = (struct checkedTokens *)malloc(sizeof(struct checkedTokens));
+	strcpy(new->lexem, yytext);
+        current->next = new;
+	new->next = NULL;
+        while(token){
+        if(token == GCD){
+                printf("%u", yylineno);
+                token = yylex();
+      }
+        else token = yylex();
+      }
+    printf("\n");
+    }
+rewind(stdin);
+  }
+  free(first);
+  free(new);	
+  return 0;
+
+}
+
+  
+
+
+
