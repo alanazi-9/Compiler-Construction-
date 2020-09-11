@@ -30,6 +30,7 @@ enum TOKENS{ KEWORD = 16, ID, OP, PARENTHESIS};                           // *
 [()] {return PARENTHESIS;}
 "define-fun" {return DEFINEFUN;} //To return the keyword "define-fun"
 "gcd" {return GCD;} // Not completed yet
+
 %%
 
 int check(char *token)  // A function to check if the token has showed or not 
