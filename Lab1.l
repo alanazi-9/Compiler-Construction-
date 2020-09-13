@@ -3,33 +3,33 @@
 
 #define MAX 50
 
-//A structure for checking the tokens to implement a linked list
+// A structure for checking the tokens to implement a linked list
 struct checkedTokens{
    char lexem[MAX];
    struct checkedTokens *next;
 };
 
-struct checkedTokens *first; // Points to the first token
-struct checkedTokens *current; // Points to the current token
-struct checkedTokens *new; // Points to the newer token
+struct checkedTokens *first;      // Points to the first token
+struct checkedTokens *current;    // Points to the current token
+struct checkedTokens *new;        // Points to the newer token
 
-enum KEYWORDS{DEFINEFUN = 1, VAR, EVAL, PRINT, INT, BOOL, GETINT, IF, LET, GETBOOL, SEMICOLON}; // *
-enum OPs{ EQUAL = 12, GREATERTHAN, MINUS};                                // The tokne types
-enum PARENTHESIS{ LEFT = 15, RIGHT};                                      //
-enum TOKENS{ KEWORD = 17, ID, OP, PARENTHESIS, GCD};                           // *
+enum KEYWORDS{DEFINEFUN = 1, VAR, EVAL, PRINT, INT, BOOL, GETINT, IF, LET, GETBOOL, SEMICOLON};   // Decleraion of keywords as type of tokens
+enum OPs{ EQUAL = 12, GREATERTHAN, MINUS};                                                        // Decleration of operations as a type of tokens
+enum PARENTHESIS{ LEFT = 15, RIGHT};                                                              // Decleration of paranthesis as a type of tokens
+enum TOKENS{ KEYWORD = 17, ID, OP, PARENTHESIS, GCD};                                             // Tokens
 %}
 
 %option yylineno
 
 %%
 
-[\t\n] {}
-[;] {return SEMICOLON;}
-[-+*/^=] {return OP;}
-[()] {return PARENTHESIS;}
-"define-fun" {return DEFINEFUN;} //To return the keyword "define-fun"
-"gcd" {return GCD;} // Not completed yet (just for testing)
-([a-zA-Z0-9])* {return ID;}
+[\t\n] {}                             // To ignore spaces and new lines
+[;] {return SEMICOLON;}               // What comes if ; found
+[-+*/^=] {return OP;}                 // What comes if an operator found
+[()] {return PARENTHESIS;}            // What comes if paranthesis found
+"define-fun" {return DEFINEFUN;}      // What comes if the keyword "define-fun" found
+"gcd" {return GCD;}                   // Not completed yet (just for testing)
+([a-zA-Z0-9])* {return ID;}           // To identify the words and the numbers
 %%
 
 int check(char *token)  // A function to check if the token has showed or not 
