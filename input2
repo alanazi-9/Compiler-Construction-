@@ -1,0 +1,5 @@
+define-fun (gcd (int x) (int y))
+if (= x y) x
+if (> x y) (gcd y (- x y))
+let (int z (- y x)) (GCD x z)
+eval (gcd (get-int) (Get-int))
