@@ -3,7 +3,7 @@
 
 #define KEWORD  1           // *
 #define ID 2                //
-#define OP 3                //
+#define OP 3                // 
 #define PARENTHESIS 4       // Types of tokens
 #define SEMICOLON 5         //
 #define COMMENT 6           // *
@@ -52,7 +52,16 @@ void printLinkedList() // To print the linked list [used for debugging]
         current = current->next; 
     } 
 }
-
+int stringCmpi(char *s1,char *s2) // A function to ignore a sensitive cases like what we have in the lab1
+{
+    int i=0,diff=0;
+    for(i=0; s1[i]!='\0'; i++)
+    {
+        if( toupper(s1[i])!=toupper(s2[i]) )
+            return 1;           
+    }
+    return 0;
+}
 int addToken(int type)  // A function to check if the token has showed or not [Returns the type of the token]
 {
     if(strcmp(yytext, ";") == 0)
@@ -104,7 +113,7 @@ void printTokensLines(){  // A function to print each token with its lines numbe
 
             while(nextToken != NULL)
             {
-                if(strcmp(current->lexem, nextToken->lexem) == 0)
+                if(stringCmpi(current->lexem, nextToken->lexem) == 0) // here to check and compare to solve the sensitive cases
                 {
                     printf("%d", nextToken->lineNo); // Printing the lines numbers
                     nextToken->printed = 1;          // Setting the flag to [printed] to ignore it for the next same token
@@ -133,8 +142,5 @@ int main(int argc, char* argv[])
     if(DEBUGGMODE)          // For debug purposes 
         printLinkedList();
 
-    free(first);
-    free(current);
-    free(nextToken);
     return 0;
 }
