@@ -12,7 +12,6 @@
 
 #define DEBUGGMODE 0        // Debugging flag
 
-
 //A structure for for each token to implement a linked list
 struct Token{
    char lexem[MAX];      // Holds the name of the token (lexem) 
@@ -25,7 +24,6 @@ struct Token{
 struct Token *first;        // Points to the first token
 struct Token *current;      // Points to the current token
 struct Token *nextToken;    // Points to the next token
-int commentLine;            // Holds the comment line number 
 %}
 
 %option yylineno
@@ -34,7 +32,7 @@ int commentLine;            // Holds the comment line number
 %%
 
 [\t\n] {}
-";" {addToken(SEMICOLON);}
+";" {}
 [-+*/^=>] {addToken(OP);}
 [()] {addToken(PARENTHESIS);}
 "define-fun" {addToken(KEWORD);} 
@@ -52,6 +50,7 @@ void printLinkedList() // To print the linked list [used for debugging]
         current = current->next; 
     } 
 }
+
 int stringCmpi(char *s1,char *s2) // A function to ignore a sensitive cases like what we have in the lab1
 {
     int i=0,diff=0;
@@ -62,14 +61,10 @@ int stringCmpi(char *s1,char *s2) // A function to ignore a sensitive cases like
     }
     return 0;
 }
+
 int addToken(int type)  // A function to check if the token has showed or not [Returns the type of the token]
 {
-    if(strcmp(yytext, ";") == 0)
-    {
-        commentLine = yylineno;
-        return COMMENT;
-    }
-    if(first == NULL && strcmp(yytext, ";") != 0 && yylineno != commentLine) //Add the first token to the linked list
+    if(first == NULL) //Add the first token to the linked list
     {
         current = (struct Token *)malloc(sizeof(struct Token));
 
@@ -80,7 +75,7 @@ int addToken(int type)  // A function to check if the token has showed or not [R
         current->next = NULL;             // Making the next pointer points to NULL
         first = current;                  // Making the first pointer points the current
     }
-    else if(first != NULL && strcmp(yytext, ";") != 0 && yylineno != commentLine)   // The the first token has already inserted
+    else 
     {
         struct Token *new;                                     // A pointer for a new token to be added to the linked list
         new = (struct Token *)malloc(sizeof(struct Token));    // Allocating memory for the new token
@@ -91,11 +86,7 @@ int addToken(int type)  // A function to check if the token has showed or not [R
         new->printed = 0;                                      // Zeroing the flag
         new->next = NULL;                                      // Making the next pointer points to NULL
         current = new;                                         // Making the current pointer points the new token
-
     }
-    else    
-        return COMMENT;
-    
     return type;   // Return the type of the token
 }
 
@@ -130,9 +121,8 @@ void printTokensLines(){  // A function to print each token with its lines numbe
 
 int main(int argc, char* argv[]) 
 {
-    first = NULL;           //
-    commentLine = 0;        //  Initializing variables
-    int token = 0;          //
+    first = NULL;           //Initializing variables 
+    int token = 0;          // *
 
     token = yylex();
     printf("\n");
