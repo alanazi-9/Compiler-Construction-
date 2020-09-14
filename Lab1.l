@@ -1,135 +1,140 @@
 %{
 #include <stdio.h>
 
-#define MAX 50
+#define KEWORD  1           // *
+#define ID 2                //
+#define OP 3                //
+#define PARENTHESIS 4       // Types of tokens
+#define SEMICOLON 5         //
+#define COMMENT 6           // *
 
-// A structure for checking the tokens to implement a linked list
-struct checkedTokens{
-   char lexem[MAX];
-   struct checkedTokens *next;
+#define MAX 50              // Max size of the token 
+
+#define DEBUGGMODE 0        // Debugging flag
+
+
+//A structure for for each token to implement a linked list
+struct Token{
+   char lexem[MAX];      // Holds the name of the token (lexem) 
+   int type;             // Holds the type of the token (ex: keyword, operator, ..etc)
+   int lineNo;           // Holds the line number of the token
+   int printed;          // A flag to check if the token has printed or not
+   struct Token *next;   // A pointer to the next token
 };
 
-struct checkedTokens *first;      // Points to the first token
-struct checkedTokens *current;    // Points to the current token
-struct checkedTokens *new;        // Points to the newer token
-
-enum KEYWORDS{DEFINEFUN = 1, VAR, EVAL, PRINT, INT, BOOL, GETINT, IF, LET, GETBOOL, SEMICOLON};   // Decleraion of keywords as type of tokens
-enum OPs{ EQUAL = 12, GREATERTHAN, MINUS};                                                        // Decleration of operations as a type of tokens
-enum PARENTHESIS{ LEFT = 15, RIGHT};                                                              // Decleration of paranthesis as a type of tokens
-enum TOKENS{ KEYWORD = 17, ID, OP, PARENTHESIS, GCD};                                             // Tokens
+struct Token *first;        // Points to the first token
+struct Token *current;      // Points to the current token
+struct Token *nextToken;    // Points to the next token
+int commentLine;            // Holds the comment line number 
 %}
 
 %option yylineno
+%option caseless
 
 %%
 
-[\t\n] {}                             // To ignore spaces and new lines
-[;] {return SEMICOLON;}               // What comes if ; found
-[-+*/^=] {return OP;}                 // What comes if an operator found
-[()] {return PARENTHESIS;}            // What comes if paranthesis found
-"define-fun" {return DEFINEFUN;}      // What comes if the keyword "define-fun" found
-"gcd" {return GCD;}                   // Not completed yet (just for testing)
-([a-zA-Z0-9])* {return ID;}           // To identify the words and the numbers
+[\t\n] {}
+";" {addToken(SEMICOLON);}
+[-+*/^=>] {addToken(OP);}
+[()] {addToken(PARENTHESIS);}
+"define-fun" {addToken(KEWORD);} 
+"get-int" {addToken(KEWORD);}
+([a-zA-Z0-9])* {addToken(ID);}
 %%
 
-int check(char *token)  // A function to check if the token has showed or not 
+void printLinkedList() // To print the linked list [used for debugging]
 {
-struct checkedTokens* searcher = first;   
-   
-if (strcmp(searcher->lexem, token) != 0 && searcher->next == NULL || strcmp(searcher->lexem, token) == 0 && searcher->next == NULL){ // To check if the token is the first or not
-//printf("first IF in check();\n"); //for testing  
-free(searcher);             
-return 1; }
+    current = first;
 
- while (searcher != NULL) // While loop to check every token in the linked list
+    while (current != NULL) // While loop to check every token in the linked list
     { 
-        if (strcmp(searcher->lexem, token) == 0){ 
-		
-		printf("innerloop\n");
-        return 0; }
-        searcher = searcher->next; 
+        printf("\nLexem: %s Type: %d  lineNo: %d\n", current->lexem, current->type, current->lineNo);
+        current = current->next; 
     } 
-    return 1; 
 }
 
-int main(int argc, char* argv[]) {
-
-int firstToken;  // Store the first token number that returned from yylex();
-firstToken = yylex();
-
-first = (struct checkedTokens *)malloc(sizeof(struct checkedTokens)); 
-current = (struct checkedTokens *)malloc(sizeof(struct checkedTokens));
-
-strcpy(first->lexem, yytext);
-first->next = NULL;
-
-strcpy(current->lexem, yytext);
-current->next = NULL;
-
-printf("%s: ", yytext);
-while(firstToken){
-	if(strcmp(yytext, first->lexem) == 0){
-		printf("%u", yylineno);
-		firstToken = yylex();
-      }
-	else firstToken = yylex();
-      }
-    printf("\n");
-    yylineno = 1;
-    rewind(stdin);
-
-int token;
-
-firstToken = yylex(); 
-token = yylex();
-
-while(token){
-    if(token == DEFINEFUN && check(current->lexem) == 1){
-    	printf("%s: ", yytext);
-	new = (struct checkedTokens *)malloc(sizeof(struct checkedTokens));
-	strcpy(new->lexem, yytext);
-	current->next = new;
-	new->next = NULL;
-	while(token){
-	if(token == DEFINEFUN){
-		printf("%u", yylineno);
-		token = yylex();
-      }
-	else token = yylex();
-      }
-    printf("\n");
-    yylineno = 1;
-    rewind(stdin);
+int addToken(int type)  // A function to check if the token has showed or not [Returns the type of the token]
+{
+    if(strcmp(yytext, ";") == 0)
+    {
+        commentLine = yylineno;
+        return COMMENT;
     }
+    if(first == NULL && strcmp(yytext, ";") != 0 && yylineno != commentLine) //Add the first token to the linked list
+    {
+        current = (struct Token *)malloc(sizeof(struct Token));
 
-    else if(token == DEFINEFUN && check(current->lexem) == 0)
-        token = yylex();
-
-    else if(token == GCD && check(yytext) == 1){
-        printf("%s: ", yytext);
-	      new = (struct checkedTokens *)malloc(sizeof(struct checkedTokens));
-	strcpy(new->lexem, yytext);
-        current->next = new;
-	new->next = NULL;
-        while(token){
-        if(token == GCD){
-                printf("%u", yylineno);
-                token = yylex();
-      }
-        else token = yylex();
-      }
-    printf("\n");
-    yylineno = 1;
-    rewind(stdin);
+        strcpy(current->lexem, yytext);   // Copy from the scanner to the lexem string
+        current->type = type;             // Add the type of the token 
+        current->lineNo = yylineno;       // Add the line number of the token
+        current->printed = 0;             // Zeroing the flag
+        current->next = NULL;             // Making the next pointer points to NULL
+        first = current;                  // Making the first pointer points the current
     }
-    else if(token == GCD && check(yytext) == 1)
-        token = yylex();
-    else break;
-  }
+    else if(first != NULL && strcmp(yytext, ";") != 0 && yylineno != commentLine)   // The the first token has already inserted
+    {
+        struct Token *new;                                     // A pointer for a new token to be added to the linked list
+        new = (struct Token *)malloc(sizeof(struct Token));    // Allocating memory for the new token
+        current->next = new;                                   // Maikng the next pointer of the current token points to the new token 
+        strcpy(new->lexem, yytext);                            // Copy from the scanner to the lexem string  
+        new->type = type;                                      // Add the type of the token
+        new->lineNo = yylineno;                                // Add the line number of the token
+        new->printed = 0;                                      // Zeroing the flag
+        new->next = NULL;                                      // Making the next pointer points to NULL
+        current = new;                                         // Making the current pointer points the new token
 
-  free(first);
-  free(new);	
-  return 0;
+    }
+    else    
+        return COMMENT;
+    
+    return type;   // Return the type of the token
+}
+
+void printTokensLines(){  // A function to print each token with its lines numbers
+    
+    current = first;  // To start from the beginning of the linked list
+
+    while (current != NULL) // While loop to check every token in the linked list
+    {  
+        nextToken = first;
+        
+        if(current->printed == 0) // Checking if the current token has printed or not
+        {
+            printf("%-25s:", current->lexem); // Printing the token to be followed by the lines numbers
+
+            while(nextToken != NULL)
+            {
+                if(strcmp(current->lexem, nextToken->lexem) == 0)
+                {
+                    printf("%d", nextToken->lineNo); // Printing the lines numbers
+                    nextToken->printed = 1;          // Setting the flag to [printed] to ignore it for the next same token
+                }
+                
+                nextToken = nextToken->next;
+            }
+            printf("\n");
+        }
+        current = current->next; 
+    } 
 
 }
 
+int main(int argc, char* argv[]) 
+{
+    first = NULL;           //
+    commentLine = 0;        //  Initializing variables
+    int token = 0;          //
+
+    token = yylex();
+    printf("\n");
+
+    printTokensLines(); 
+
+    if(DEBUGGMODE)          // For debug purposes 
+        printLinkedList();
+
+    free(first);
+    free(current);
+    free(nextToken);
+    return 0;
+}
