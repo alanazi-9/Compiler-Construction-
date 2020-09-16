@@ -4,9 +4,10 @@
 #define KEWORD  1           // *
 #define ID 2                //
 #define OP 3                // 
-#define PARENTHESIS 4       // Types of tokens
-#define SEMICOLON 5         //
-#define COMMENT 6           // *
+#define NUMBER 4
+#define PARENTHESIS 5       // Types of tokens
+#define SEMICOLON 6         //
+#define COMMENT 7           // *
 
 #define ERROR -1
 
@@ -37,12 +38,27 @@ int commentLine;            // Holds the comment line number
 
 [\t\n] {}
 ";" {commentLine = yylineno;}
-[-+*/^] {addToken(OP);}
+[-+*] {addToken(OP);}
 [()] {addToken(PARENTHESIS);}
 "define-fun" {addToken(KEWORD);} 
 "get-int" {addToken(KEWORD);}
+"get-bool" {addToken(KEWORD);}
+"eval" {addToken(KEWORD);}
+"let" {addToken(KEWORD);}
+"if" {addToken(KEWORD);}
+"int" {addToken(KEWORD);}
+"bool" {addToken(KEWORD);}
+"print" {addToken(KEWORD);}
+"div" {addToken(OP);}
+"mod" {addToken(OP);}
+"true" {addToken(KEWORD);}
+"false" {addToken(KEWORD);}
+"not" {addToken(KEWORD);}
+"or" {addToken(KEWORD);}
+"and" {addToken(KEWORD);}
 [A-Za-z][A-Za-z0-9]* {addToken(ID);}
 [0-9][A-Za-z0-9]+ {} 
+[0-9]* {addToken(NUMBER);}
 "=" {addToken(OP);}
 "<=" {addToken(OP);}
 ">=" {addToken(OP);}
