@@ -1,6 +1,5 @@
-(define-fun (gcd (int a)) int)
-; declaring function
+(define-fun (test (int a) (int b)) bool ; declaring function
 (if (= a 5) a)
 (if (> a 5) (gcd (a))
 ; the operation
-eval (gcd (int-Get))
+eval (test (Get-int))
