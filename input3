@@ -4,4 +4,3 @@
 (print(+ a b))
 (eval (gcd (get-int) (Get-int)))
 (if (> a b) a)
-(if (< a b) b)
