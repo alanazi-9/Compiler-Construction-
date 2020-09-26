@@ -26,7 +26,6 @@ begin: exp
      ;
 
 exp: LP EVAL term RP {printf("%d\n", $3);}
-   | logical {printf("%d\n", $1);}
    ;
     
 term: LP PLUS term term extra RP {$$ = $3 + $4;}
