@@ -10,7 +10,7 @@ extern YYSTYPE yylval;
 
 %%
 
-[\t\n] {}
+[ \t\n] {}
 ";" {return SEMICOLON;}
 [-] {return MINUS;}
 [+] {return PLUS;}

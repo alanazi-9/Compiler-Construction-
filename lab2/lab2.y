@@ -12,21 +12,52 @@ void yyerror(char *s);
 	int num;
 }
 
-%start begin
-%token EVAL LP RP ID PLUS MINUS MULT SEMICOLON DEFINEFUN GETINT GETBOOL LET IF INT BOOL PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER
-%token<num> NUMBER
-
-%type<num> term
-%type<num> exp
-%type<num> extra
-%type<num> logical
+%start program
+%token EVAL eval LP RP ID const PLUS MINUS MULT SEMICOLON DEFINEFUN fun expr var  GETINT int GETBOOL let LET if IF INT bool BOOL print PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER STAR
 
 %%
-begin: exp 
-     ;
+program:  LP DEFINEFUN LP fun LP var type RP STAR RP  type expr RP  program
+        |  LP eval expr RP 
+        |  LP print expr RP 
+        ;
 
-exp: LP EVAL term RP {printf("%d\n", $3);}
-   ;
+type: int
+    | BOOL
+    ;
+
+term: const
+    | var
+    |  LP GETINT RP 
+    |  LP PLUS term term RP 
+    |  LP MULT term term RP 
+    |  LP MINUS term term RP 
+    |  LP DIV term term RP 
+    |  LP MOD term term RP  
+    |  LP IF fla term term RP 
+    |  LP fun expr STAR RP 
+    |  LP LET  LP var expr RP  term RP 
+    ;
+
+fla: TRUE
+    | FALSE
+    | var
+    |  LP GETBOOL RP 
+    |  LP EQUAL term term RP 
+    |  LP LESS term term RP 
+    |  LP LEQ term term RP 
+    |  LP GREATER term term RP 
+    |  LP GEQ term term RP 
+    |  LP NOT fla RP 
+    |  LP AND fla fla RP 
+    |  LP OR fla fla RP 
+    |  LP IF fla fla fla RP 
+    |  LP fun expr STAR RP 
+    |  LP let  LP var expr RP  fla RP 
+    ;
+
+%%
+
+/*
     
 term: LP PLUS term term extra RP {$$ = $3 + $4;}
     | LP MINUS term term RP {$$ = $3 - $4;}
@@ -43,19 +74,13 @@ logical: LP OR logical logical RP{$$ = $3 || $4;}
        | FALSE {$$ = 1;}
        ;
 
-extra: /* epsilon */
-     | term
-     ;
-    
+*/
 
-%%
-
-int main(void)
-{
-    return yyparse();
+void main()
+{  
+    yyparse();
 }
-
 void yyerror(char *s)
-{
+ {
     printf("%s\n", s);
-}
+ }
