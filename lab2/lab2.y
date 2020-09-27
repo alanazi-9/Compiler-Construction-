@@ -13,68 +13,64 @@ void yyerror(char *s);
 }
 
 %start program
-%token EVAL eval LP RP ID const PLUS MINUS MULT SEMICOLON DEFINEFUN fun expr var  GETINT int GETBOOL let LET if IF INT bool BOOL print PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER STAR
+%token EVAL LP RP ID PLUS MINUS MULT SEMICOLON DEFINEFUN VAR GETINT GETBOOL LET IF INT BOOL PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER FUN
+%token<num> NUMBER
+
+
+
+
+%type<num> term
+%type<num> expr
+%type<num> program
+%type<num> fla
+%type<num> TRUE
+%type<num>FALSE
 
 %%
-program:  LP DEFINEFUN LP fun LP var type RP STAR RP  type expr RP  program
-        |  LP eval expr RP 
-        |  LP print expr RP 
+program:  LP DEFINEFUN LP FUN LP ID type RP RP type expr RP program
+        |  LP EVAL expr RP {printf("%d", $3);}
+        |  LP PRINT expr RP 
         ;
 
-type: int
+type: INT
     | BOOL
     ;
 
-term: const
-    | var
-    |  LP GETINT RP 
-    |  LP PLUS term term RP 
-    |  LP MULT term term RP 
-    |  LP MINUS term term RP 
-    |  LP DIV term term RP 
-    |  LP MOD term term RP  
-    |  LP IF fla term term RP 
-    |  LP fun expr STAR RP 
-    |  LP LET  LP var expr RP  term RP 
+expr: term
+    | fla
     ;
 
-fla: TRUE
-    | FALSE
-    | var
+term: NUMBER {$$ = $1;}
+    | ID
+    |  LP GETINT RP 
+    |  LP PLUS term term RP {$$ = $3 + $4;}
+    |  LP MULT term term RP {$$ = $3 * $4;}
+    |  LP MINUS term term RP {$$ = $3 - $4;}
+    |  LP DIV term term RP {$$ = $3 / $4;}
+    |  LP MOD term term RP  {$$ = $3 % $4;}
+    |  LP IF fla term term RP 
+    |  LP ID expr RP 
+    |  LP LET  LP ID expr RP  term RP 
+    ;
+
+fla: TRUE {$$ = 0;}
+    | FALSE {$$ = 1;}
+    | ID
     |  LP GETBOOL RP 
-    |  LP EQUAL term term RP 
-    |  LP LESS term term RP 
-    |  LP LEQ term term RP 
-    |  LP GREATER term term RP 
-    |  LP GEQ term term RP 
-    |  LP NOT fla RP 
-    |  LP AND fla fla RP 
-    |  LP OR fla fla RP 
+    |  LP EQUAL term term RP {if($3 == $4) $$ = 0; else $$ = 1;}
+    |  LP LESS term term RP {if($3 < $4) $$ = 0; else $$ = 1;}
+    |  LP LEQ term term RP {if($3 <= $4) $$ = 0; else $$ = 1;}
+    |  LP GREATER term term RP {if($3 > $4) $$ = 0; else $$ = 1;}
+    |  LP GEQ term term RP {if($3 >= $4) $$ = 0; else $$ = 1;}
+    |  LP NOT fla RP {if($3 == 0) $$ = 1; else $$ = 0;}
+    |  LP AND fla fla RP {$$ = $3 && $4;}
+    |  LP OR fla fla RP {$$ = $3 || $4;}
     |  LP IF fla fla fla RP 
-    |  LP fun expr STAR RP 
-    |  LP let  LP var expr RP  fla RP 
+    |  LP ID expr RP 
+    |  LP LET  LP ID expr RP  fla RP 
     ;
 
 %%
-
-/*
-    
-term: LP PLUS term term extra RP {$$ = $3 + $4;}
-    | LP MINUS term term RP {$$ = $3 - $4;}
-    | LP MULT term term extra RP{$$ = $3 * $4;}
-    | LP DIV term term extra RP{$$ = $3 / $4;}
-    | LP MOD term term extra RP{$$ = $3 % $4;}
-    | logical
-    | NUMBER {$$ = $1;}
-    ;
-
-logical: LP OR logical logical RP{$$ = $3 || $4;}
-       | LP AND logical logical RP{$$ = $3 && $4;}
-       | TRUE {$$ = 0;}
-       | FALSE {$$ = 1;}
-       ;
-
-*/
 
 void main()
 {  
