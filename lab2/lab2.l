@@ -17,6 +17,7 @@ extern YYSTYPE yylval;
 [*] {return MULT;}
 [(] {return LP;}
 [)] {return RP;}
+"fun" {return FUN;}
 "define-fun" {return DEFINEFUN;}
 "get-int" {return GETINT;}
 "get-bool" {return GETBOOL;}
