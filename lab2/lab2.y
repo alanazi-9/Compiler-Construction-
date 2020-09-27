@@ -64,7 +64,7 @@ term: NUMBER {$$ = $1;}
     | LP MINUS term term RP {$$ = $3 - $4;}
     | LP DIV term term RP {$$ = $3 / $4;}
     | LP MOD term term RP  {$$ = $3 % $4;}
-    | LP IF fla term term RP 
+    | LP IF fla term term RP {if($3 == 1) $$ = $4; else $$ = $5;}
     | LP ID optional2 RP {if(evalFLAG == 1) { err = 1; yyerror("syntax error : functions cannot called inside eval\n");}}
     | LP LET LP ID expr RP term RP {if(evalFLAG == 1) {err = 1; yyerror("syntax error : let cannot be declared inside eval\n");}}
     ;
@@ -92,7 +92,7 @@ fla: TRUE {$$ = 1;}
     | LP NOT fla RP {if($3 == 1) $$ = 0; else $$ = 1;}
     | LP AND fla fla extraAND RP {$$ = $3 && $4 && additionalAND;}
     | LP OR fla fla extraOR RP {$$ = $3 || $4 || additionalOR; additionalOR = 0;}
-    | LP IF fla fla fla RP {if($3 == 1 && $4 == 1 && $5 == 1) $$ = 1; else $$ = 0;}
+    | LP IF fla fla fla RP {if($3 == 1) $$ = $4; else $$ = $5;}
     | LP ID optional3 RP {if(evalFLAG == 1) { err = 1; yyerror("syntax error : functions cannot called inside eval\n");} $$ = get_ID_value(yyval.id);}
     | LP LET LP ID expr RP fla RP {if(evalFLAG == 1) {err = 1; yyerror("syntax error : let cannot be declared inside eval\n");}}
     ;
