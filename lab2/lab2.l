@@ -17,7 +17,6 @@ extern YYSTYPE yylval;
 [*] {return MULT;}
 [(] {return LP;}
 [)] {return RP;}
-"fun" {return FUN;}
 "define-fun" {return DEFINEFUN;}
 "get-int" {return GETINT;}
 "get-bool" {return GETBOOL;}
@@ -34,7 +33,7 @@ extern YYSTYPE yylval;
 "not" {return NOT;}
 "or" {return OR;}
 "and" {return AND;}
-[A-Za-z][A-Za-z0-9]* {return ID;} 
+[A-Za-z][A-Za-z0-9]* {yylval.id = yytext[0]; return ID;} 
 [-]?[0-9]* {yylval.num = atoi(yytext); return NUMBER;}
 "=" {return EQUAL;}
 "<=" {return LEQ;}
