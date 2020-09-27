@@ -65,7 +65,7 @@ fla: TRUE {$$ = 0;}
     |  LP NOT fla RP {if($3 == 0) $$ = 1; else $$ = 0;}
     |  LP AND fla fla RP {$$ = $3 && $4;}
     |  LP OR fla fla RP {$$ = $3 || $4;}
-    |  LP IF fla fla fla RP 
+    |  LP IF fla fla fla RP {if($3 == 0 && $4 == 0 && $5 == 0) $$ = 0; else $$ = 1;}
     |  LP ID expr RP 
     |  LP LET  LP ID expr RP  fla RP 
     ;
