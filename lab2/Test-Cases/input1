@@ -1,0 +1,1 @@
+(define-fun (rettrue) bool true)(define-fun (letfun (v int)) int (+ (if (rettrue) v (* -1 v)) 100))(eval (+ 2 3))
