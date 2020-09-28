@@ -24,7 +24,7 @@ int err;
 }
 
 %start program
-%token EVAL LP RP PLUS MINUS MULT SEMICOLON DEFINEFUN VAR GETINT GETBOOL LET IF INT BOOL PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER 
+%token EVAL LP RP PLUS MINUS MULT DEFINEFUN VAR GETINT GETBOOL LET IF INT BOOL PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER COMMENT
 %token<num> NUMBER 
 %token<num> ID
 
@@ -38,7 +38,7 @@ int err;
 %%
 program:  LP DEFINEFUN LP ID optional1 RP type expr RP program {set_ID_value(yyval.id, $8);}
         |  LP eval expr RP { if(err == 0) printf("OUTPUT : %d\n", $3); evalFLAG = 0;}
-        |  LP PRINT expr RP 
+        |  LP PRINT expr RP {printf("PRINT : %d\n", $3);}
         ;
 
 eval: EVAL {evalFLAG = 1;} 
