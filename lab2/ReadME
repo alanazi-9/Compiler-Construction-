@@ -1,0 +1,8 @@
+To compile it:
+make
+
+To run it:
+./lab2 < input
+
+Also, it can be run in the active bash:
+./lab2
