@@ -1,0 +1,1 @@
+(define-fun (fun1 (a int)) int x)(print 4)
