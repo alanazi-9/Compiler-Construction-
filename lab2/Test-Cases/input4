@@ -1,0 +1,1 @@
+(define-fun (fun1) int x)(eval (mod 2 (fun1)))
