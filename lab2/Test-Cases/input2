@@ -1,0 +1,1 @@
+(define-fun (fun) int x)(eval (- 5 6 1))
