@@ -13,6 +13,9 @@ int check_fun_define(char *name);
 void insert_fun(char *name);
 int insertArg(char *funName, char *argName, int argType, int tokenID);
 void insert_retType(char *funName, int retType);
+void insertVar(char *name, int type, bool funArg);
+int check_var(char *name);
+struct definedFunctions* findFun(char *name);
 
 struct kleeneStar{
     char *lexem;
@@ -35,7 +38,15 @@ struct definedFunctions{
     struct definedFunctions *next;
 };
 
+struct varList{
+    char *varName;
+    int varType;
+    bool isFunArg;
+    struct varList *next;
+};
+
 struct definedFunctions *funHead;
+struct varList *varHead;
 
 struct funArg *headOptinal1;
 struct kleeneStar *headExtraPlus;
@@ -63,31 +74,29 @@ int err;
 %start program
 %token EVAL LP RP PLUS MINUS MULT DEFINEFUN VAR GETINT GETBOOL LET IF PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER COMMENT FUNID VARID CALL
 %token<str> ID NUMBER 
-%token<num> INT BOOL 
+%token<num> INT BOOL NOTYET
 %type<num> argtype argid optional1 varid funid expr type 
 %%
 program:  LP DEFINEFUN LP funid optional1 RP type expr RP program {
                 struct ast* tmp = find_ast_node($4);
-                if(check_fun_define(tmp->token) == 1)
-                {   
-                    insert_child($4);
-                    while(headOptinal1 != NULL)
+                
+                insert_child($4);
+                struct definedFunctions *fun = findFun(tmp->token);
+                struct funArg *funArgs = (struct funArg *)malloc(sizeof(struct funArg));
+                funArgs = fun->argsHead;
+                    while(funArgs != NULL)
                     {
                         printf("ast id: %d\t token: %s\t ntoken: %d\n", tmp->id, tmp->token, tmp->ntoken);
-                        insertArg(tmp->token, headOptinal1->argName, headOptinal1->argType, headOptinal1->tokenID);
                         printf("tmp-token: %s\n", tmp->token);
-                        insert_child(headOptinal1->tokenID);
-                        headOptinal1 = headOptinal1->next;
+                        insert_child(funArgs->tokenID);
+                        funArgs = funArgs->next;
                     }
-                    if(headOptinal1 == NULL)
+                    if(funArgs == NULL)
                         printf("null\n");
-                    insert_retType(tmp->token, $7);
+                    
+                    printf("fun ret type: %d\n", fun->retType);
                     insert_child($8);
                     insert_node("define-fun", DEFINEFUN);
-                }
-                else{
-                     printf("Function '%s' is already defined\n", tmp->token);
-                }
         }
         |  LP eval expr RP { 
                 if(err == 0) printf("OUTPUT : %d\n", $3); 
@@ -106,6 +115,7 @@ funid: ID {
             if(check_fun_define($1) == 1)
             {
                 lastDefinedFun = $1;
+                insert_fun($1);
                 $$ = insert_node($1, FUNID);
                 printf("Funid: %s\n", $1);
             }
@@ -118,40 +128,43 @@ eval: EVAL {evalFLAG = 1;}
 optional1: /* epsilon */ 
         | LP argid argtype RP optional1 
         {
-            if(check_fun_define(lastDefinedFun) == 1)
-            {
-                insert_fun(lastDefinedFun);
+                struct definedFunctions *fun = findFun(lastDefinedFun);
                 struct ast* node = find_ast_node($2);
                 printf("op1 ast id: %d\t token: %s\t ntoken: %d\n", node->id, node->token, node->ntoken);
-                if(headOptinal1 == NULL) 
+                if(fun->argsHead == NULL) 
                 {
-                    headOptinal1 = (struct funArg *)malloc(sizeof(struct funArg));
-                    headOptinal1->funName = lastDefinedFun;
-                    headOptinal1->tokenID = $2; 
-                    headOptinal1->argType = $3;
-                    headOptinal1->argName = node->token;
-                    headOptinal1->next = NULL;
+                    struct funArg *tmp = (struct funArg *)malloc(sizeof(struct funArg));
+                    tmp->funName = fun->funName;
+                    tmp->tokenID = $2; 
+                    tmp->argType = $3;
+                    tmp->argName = node->token;
+                    tmp->next = NULL;
+                    fun->argsHead = tmp;
+                    fun->argNum++;
+
+                    insertVar(tmp->argName, tmp->argType, true);
                 }
                 else {
                     struct funArg *curr = (struct funArg *)malloc(sizeof(struct funArg));
                     struct funArg *tmp1;
                     struct funArg *tmp2;
-                    tmp1 = headOptinal1;
+                    tmp1 = fun->argsHead;
                     while(tmp1 != NULL)
                     {
                         tmp2 = tmp1;
                         tmp1 = tmp1->next;
                     }
                     tmp2->next = curr;
-                    //strcpy(curr->lexem, $1); 
+                    //strcpy(curr->lexem, $1);
+                    curr->funName = fun->funName; 
                     curr->tokenID = $2; 
                     curr->argType = $3;
                     curr->argName = node->token;
                     curr->next = NULL;
+                    fun->argNum++;
+                    insertVar(curr->argName, curr->argType, true);
                 }
-            }
-            else
-                printf("Function '%s' is already defined\n", lastDefinedFun);
+            
         }
         ;
 
@@ -273,7 +286,10 @@ expr: NUMBER {$$ = insert_node($1, NUMBER);}
     }
     ;
 
-varid: ID { $$ = insert_node($1, VARID); }
+varid: ID { 
+                insertVar($1, NOTYET, false);
+                $$ = insert_node($1, VARID);
+        }
      ;
 optional2: /* epsilon */ 
          | expr
@@ -391,6 +407,7 @@ extraOR: /* epsilon */
 
 void main()
 {   funHead = NULL;
+    varHead = NULL;
     headOptinal1 = NULL;
     headExtraPlus = NULL;
     additionalPlus = 0;
@@ -414,6 +431,12 @@ void main()
             tmp2= tmp2->next;
         }
         tmp = tmp->next;
+    }
+    printf("\n");
+    struct varList* tmp3 = varHead;
+    while(tmp3 != NULL){
+        printf("var name: %s type: %d => is it fun arg?: %d", tmp3->varName, tmp3->varType, tmp3->isFunArg);
+        tmp3 = tmp3->next;
     }
 
     print_ast();
@@ -439,10 +462,11 @@ int check_fun_define(char *name)
     struct definedFunctions *tmp = funHead;
     while(tmp != NULL)
     {
-        if(strcmp(name, tmp->funName))
+        if(strcmp(name, tmp->funName) == 0)
             return 0;
         else tmp = tmp->next;
     }
+    printf("check-fun: not found\n");
     return 1;
 }
 
@@ -458,22 +482,25 @@ void insert_fun(char *name)
     }
     else
     {
-        struct definedFunctions *curr = (struct definedFunctions *)malloc(sizeof(struct definedFunctions));
-        struct definedFunctions *tmp1;
-        struct definedFunctions *tmp2;
-        tmp1 = funHead;
-
-        while(tmp1 != NULL)
+        if(check_fun_define(name) == 1)
         {
-            tmp2 = tmp1;
-            tmp1 = tmp1->next;
+            struct definedFunctions *curr = (struct definedFunctions *)malloc(sizeof(struct definedFunctions));
+            struct definedFunctions *tmp1;
+            struct definedFunctions *tmp2;
+            tmp1 = funHead;
+
+            while(tmp1 != NULL)
+            {
+                tmp2 = tmp1;
+                tmp1 = tmp1->next;
+            }
+            
+            tmp2->next = curr; 
+            curr->funName = name;
+            curr->next = NULL;
+            curr->argsHead = NULL;
+            curr->argNum = 0;
         }
-        
-        tmp2->next = curr; 
-        curr->funName = name;
-        curr->next = NULL;
-        curr->argsHead = NULL;
-        curr->argNum = 0;
     }
 }
 
@@ -537,5 +564,61 @@ void insert_retType(char *funName, int retType)
         if(strcmp(funName, tmp->funName))
             tmp->retType = retType;
         else tmp = tmp->next;
+    }
+}
+
+struct definedFunctions* findFun(char *name)
+{
+    struct definedFunctions *tmp = funHead;
+    while(tmp != NULL)
+    {
+        if(strcmp(name, tmp->funName) == 0)
+            return tmp;
+        else tmp = tmp->next;
+    }
+}
+
+int check_var(char *name)
+{
+    struct varList *tmp = varHead;
+    while(tmp != NULL)
+    {
+        if(strcmp(name, tmp->varName) == 0)
+            return 0;
+        else tmp = tmp->next;
+    }
+    printf("var: not found\n");
+    return 1;
+}
+
+void insertVar(char *name, int type, bool funArg)
+{
+    if(varHead == NULL)
+    {
+        varHead = (struct varList *)malloc(sizeof(struct varList));
+        varHead->varName = name;
+        varHead->varType = type;
+        varHead->isFunArg = funArg;
+        varHead->next = NULL;
+    }
+    else
+    {
+            struct varList *curr = (struct varList *)malloc(sizeof(struct varList));
+            struct varList *tmp1;
+            struct varList *tmp2;
+            tmp1 = varHead;
+
+            while(tmp1 != NULL)
+            {
+                tmp2 = tmp1;
+                tmp1 = tmp1->next;
+            }
+            
+            tmp2->next = curr; 
+            curr->varName = name;
+            curr->varType = type;
+            curr->isFunArg = funArg;
+            curr->next = NULL;
+        
     }
 }
