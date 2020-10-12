@@ -9,7 +9,41 @@ extern int yylex(void);
 void yyerror(char *s);
 void set_ID_value(char id, int value);
 int get_ID_value(char id);
+int check_fun_define(char *name);
+void insert_fun(char *name);
+int insertArg(char *funName, char *argName, int argType, int tokenID);
+void insert_retType(char *funName, int retType);
 
+struct kleeneStar{
+    char *lexem;
+    int tokenID;
+    struct kleeneStar *next; 
+};
+
+struct funArg{
+    char *funName;
+    char *argName;
+    int tokenID;
+    int argType;
+    struct funArg *next;
+};
+struct definedFunctions{
+    char* funName;
+    int argNum;
+    int retType;
+    struct funArg *argsHead;
+    struct definedFunctions *next;
+};
+
+struct definedFunctions *funHead;
+
+struct funArg *headOptinal1;
+struct kleeneStar *headExtraPlus;
+struct kleeneStar *headExtraMult;
+struct kleeneStar *headExtraAND;
+struct kleeneStar *headExtraOR;
+
+char *lastDefinedFun;
 int *symTable;
 
 int additionalPlus;
@@ -27,14 +61,33 @@ int err;
 }
 
 %start program
-%token ID NUMBER EVAL LP RP PLUS MINUS MULT DEFINEFUN VAR GETINT GETBOOL LET IF PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER COMMENT FUNID VARID CALL
+%token EVAL LP RP PLUS MINUS MULT DEFINEFUN VAR GETINT GETBOOL LET IF PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER COMMENT FUNID VARID CALL
 %token<str> ID NUMBER 
 %token<num> INT BOOL 
-%type<num> varid funid expr type EVAL LP RP PLUS MINUS MULT DEFINEFUN VAR GETINT GETBOOL LET IF PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER COMMENT FUNID VARID CALL
+%type<num> argtype argid optional1 varid funid expr type 
 %%
 program:  LP DEFINEFUN LP funid optional1 RP type expr RP program {
-                insert_children(3, $4, $7, $8);
-                insert_node("Define-fun", DEFINEFUN);
+                struct ast* tmp = find_ast_node($4);
+                if(check_fun_define(tmp->token) == 1)
+                {   
+                    insert_child($4);
+                    while(headOptinal1 != NULL)
+                    {
+                        printf("ast id: %d\t token: %s\t ntoken: %d\n", tmp->id, tmp->token, tmp->ntoken);
+                        insertArg(tmp->token, headOptinal1->argName, headOptinal1->argType, headOptinal1->tokenID);
+                        printf("tmp-token: %s\n", tmp->token);
+                        insert_child(headOptinal1->tokenID);
+                        headOptinal1 = headOptinal1->next;
+                    }
+                    if(headOptinal1 == NULL)
+                        printf("null\n");
+                    insert_retType(tmp->token, $7);
+                    insert_child($8);
+                    insert_node("define-fun", DEFINEFUN);
+                }
+                else{
+                     printf("Function '%s' is already defined\n", tmp->token);
+                }
         }
         |  LP eval expr RP { 
                 if(err == 0) printf("OUTPUT : %d\n", $3); 
@@ -45,25 +98,71 @@ program:  LP DEFINEFUN LP funid optional1 RP type expr RP program {
         |  LP PRINT expr RP {
                 insert_child($3);
                 insert_node("Print", PRINT);
+                printf("Print: %d\n", current_node_id);
         }
         ;
 
-funid: ID {$$ = insert_node($1, FUNID);}
+funid: ID {
+            if(check_fun_define($1) == 1)
+            {
+                lastDefinedFun = $1;
+                $$ = insert_node($1, FUNID);
+                printf("Funid: %s\n", $1);
+            }
+            else 
+                printf("Function '%s' is already defined\n", $1);
+        }
     ;
 eval: EVAL {evalFLAG = 1;} 
     ;
 optional1: /* epsilon */ 
-        | LP varid argtype RP optional1 { }
+        | LP argid argtype RP optional1 
+        {
+            if(check_fun_define(lastDefinedFun) == 1)
+            {
+                insert_fun(lastDefinedFun);
+                struct ast* node = find_ast_node($2);
+                printf("op1 ast id: %d\t token: %s\t ntoken: %d\n", node->id, node->token, node->ntoken);
+                if(headOptinal1 == NULL) 
+                {
+                    headOptinal1 = (struct funArg *)malloc(sizeof(struct funArg));
+                    headOptinal1->funName = lastDefinedFun;
+                    headOptinal1->tokenID = $2; 
+                    headOptinal1->argType = $3;
+                    headOptinal1->argName = node->token;
+                    headOptinal1->next = NULL;
+                }
+                else {
+                    struct funArg *curr = (struct funArg *)malloc(sizeof(struct funArg));
+                    struct funArg *tmp1;
+                    struct funArg *tmp2;
+                    tmp1 = headOptinal1;
+                    while(tmp1 != NULL)
+                    {
+                        tmp2 = tmp1;
+                        tmp1 = tmp1->next;
+                    }
+                    tmp2->next = curr;
+                    //strcpy(curr->lexem, $1); 
+                    curr->tokenID = $2; 
+                    curr->argType = $3;
+                    curr->argName = node->token;
+                    curr->next = NULL;
+                }
+            }
+            else
+                printf("Function '%s' is already defined\n", lastDefinedFun);
+        }
         ;
 
-argtype: INT
-       | BOOL
+argtype: INT {$$ = INT;}
+       | BOOL {$$ = BOOL;}
        ;
 
-varid: ID {$$ = insert_node($1, VARID);}
-     ;
-type: INT {$$ = insert_node("INT", INT);}
-    | BOOL {$$ = insert_node("BOOL", BOOL);}
+argid: ID { $$ = insert_node($1, VARID);}
+    ;
+type: INT {$$ = INT;}
+    | BOOL {$$ = BOOL;}
     ;
 
 expr: NUMBER {$$ = insert_node($1, NUMBER);}
@@ -81,10 +180,20 @@ expr: NUMBER {$$ = insert_node($1, NUMBER);}
             }
     | LP PLUS expr expr extraPlus RP {
             insert_children(2, $3, $4);
+            while(headExtraPlus != NULL)
+                {
+                    insert_child(headExtraPlus->tokenID);
+                    headExtraPlus = headExtraPlus->next;
+                }
             $$ = insert_node("PLUS", PLUS);
     }
     | LP MULT expr expr extraMult RP {
             insert_children(2, $3, $4);
+            while(headExtraMult != NULL)
+                {
+                    insert_child(headExtraMult->tokenID);
+                    headExtraPlus = headExtraMult->next;
+                }
             $$ = insert_node("MULT", MULT);
     }
     | LP MINUS expr expr RP {
@@ -112,7 +221,7 @@ expr: NUMBER {$$ = insert_node($1, NUMBER);}
                 if(evalFLAG == 1) {err = 1; yyerror("syntax error : let cannot be declared inside eval\n");
                 }
                 insert_children(3, $4, $5, $7);
-                insert_node("LET", LET);
+                $$ = insert_node("LET", LET);
                 }
     | TRUE {$$ = insert_node("TRUE", TRUE);}
     | FALSE {$$ = insert_node("FALSE", FALSE);}
@@ -146,10 +255,20 @@ expr: NUMBER {$$ = insert_node($1, NUMBER);}
     }
     | LP AND expr expr extraAND RP {
                 insert_children(2, $3, $4);
+                while(headExtraAND != NULL)
+                {
+                    insert_child(headExtraAND->tokenID);
+                    headExtraPlus = headExtraAND->next;
+                }
                 $$ = insert_node("AND", AND);
     }
     | LP OR expr expr extraOR RP {
                 insert_children(2, $3, $4);
+                while(headExtraOR != NULL)
+                {
+                    insert_child(headExtraOR->tokenID);
+                    headExtraPlus = headExtraOR->next;
+                }
                 $$ = insert_node("OR", OR);
     }
     ;
@@ -161,11 +280,55 @@ optional2: /* epsilon */
          ;
 
 extraPlus: 
-     |expr extraPlus {additionalPlus += $1;} 
+     |expr extraPlus {
+         if(headExtraPlus == NULL) 
+            {
+                headExtraPlus = (struct kleeneStar *)malloc(sizeof(struct kleeneStar));
+                //strcpy(headExtraPlus->lexem, $1);
+                headExtraPlus->tokenID = $1; 
+                headExtraPlus->next = NULL;
+            }
+            else {
+                struct kleeneStar *curr = (struct kleeneStar *)malloc(sizeof(struct kleeneStar));
+                struct kleeneStar *tmp1;
+                struct kleeneStar *tmp2;
+                tmp1 = headExtraPlus;
+                while(tmp1 != NULL)
+                {
+                    tmp2 = tmp1;
+                    tmp1 = tmp1->next;
+                }
+                tmp2->next = curr;
+                //strcpy(curr->lexem, $1); 
+                curr->tokenID = $1;
+                curr->next = NULL;
+            }
+        } 
      ;
 
 extraMult: /* epsilon */ 
-     |expr extraMult {additionalMult *= $1;} 
+     |expr extraMult {if(headExtraMult == NULL) 
+            {
+                headExtraMult = (struct kleeneStar *)malloc(sizeof(struct kleeneStar));
+                //strcpy(headExtraPlus->lexem, $1);
+                headExtraMult->tokenID = $1; 
+                headExtraMult->next = NULL;
+            }
+            else {
+                struct kleeneStar *curr = (struct kleeneStar *)malloc(sizeof(struct kleeneStar));
+                struct kleeneStar *tmp1;
+                struct kleeneStar *tmp2;
+                tmp1 = headExtraMult;
+                while(tmp1 != NULL)
+                {
+                    tmp2 = tmp1;
+                    tmp1 = tmp1->next;
+                }
+                tmp2->next = curr; 
+                curr->tokenID = $1;
+                curr->next = NULL;
+            }
+        } 
      ;
 
 optional3: /* epsilon */ 
@@ -173,16 +336,63 @@ optional3: /* epsilon */
          ;
          
 extraAND: /* epsilon */ 
-             | expr extraAND {additionalAND *= $1;}
+             | expr extraAND {
+                if(headExtraAND == NULL) 
+                {
+                    headExtraAND = (struct kleeneStar *)malloc(sizeof(struct kleeneStar));
+                    //strcpy(headExtraPlus->lexem, $1);
+                    headExtraAND->tokenID = $1; 
+                    headExtraAND->next = NULL;
+                }
+                else {
+                struct kleeneStar *curr = (struct kleeneStar *)malloc(sizeof(struct kleeneStar));
+                struct kleeneStar *tmp1;
+                struct kleeneStar *tmp2;
+                tmp1 = headExtraAND;
+                while(tmp1 != NULL)
+                {
+                    tmp2 = tmp1;
+                    tmp1 = tmp1->next;
+                }
+                tmp2->next = curr;
+                //strcpy(curr->lexem, $1); 
+                curr->tokenID = $1;
+                curr->next = NULL;
+                }
+             }
              ;
 
 extraOR: /* epsilon */
-            | expr extraOR {if($1 == 1) additionalOR = 1;}
+            | expr extraOR {
+                if(headExtraOR == NULL) 
+                {
+                    headExtraOR = (struct kleeneStar *)malloc(sizeof(struct kleeneStar));
+                    //strcpy(headExtraPlus->lexem, $1);
+                    headExtraOR->tokenID = $1; 
+                    headExtraOR->next = NULL;
+                }
+                else {
+                struct kleeneStar *curr = (struct kleeneStar *)malloc(sizeof(struct kleeneStar));
+                struct kleeneStar *tmp1;
+                struct kleeneStar *tmp2;
+                tmp1 = headExtraOR;
+                while(tmp1 != NULL)
+                {
+                    tmp2 = tmp1;
+                    tmp1 = tmp1->next;
+                }
+                tmp2->next = curr;
+                //strcpy(curr->lexem, $1); 
+                curr->tokenID = $1;
+                curr->next = NULL;
+            }}
             
 %%
 
 void main()
-{  
+{   funHead = NULL;
+    headOptinal1 = NULL;
+    headExtraPlus = NULL;
     additionalPlus = 0;
     additionalMult = 1;
     additionalOR = 0;
@@ -192,6 +402,20 @@ void main()
 
     symTable = calloc(26, sizeof(int));
     yyparse();
+    
+    struct definedFunctions* tmp = funHead;
+    struct funArg* tmp2;
+    while(tmp != NULL){
+        printf("fun name: %s No. Args: %d =>", tmp->funName, tmp->argNum);
+        tmp2 = tmp->argsHead;
+        while(tmp2 != NULL)
+        {
+            printf(" %s => %d", tmp2->argName, tmp2->argType);
+            tmp2= tmp2->next;
+        }
+        tmp = tmp->next;
+    }
+
     print_ast();
     free(symTable);
 }
@@ -208,4 +432,110 @@ void set_ID_value(char id, int value)
 int get_ID_value(char id) 
 {
 	return symTable[id - 'a'];
+}
+
+int check_fun_define(char *name)
+{
+    struct definedFunctions *tmp = funHead;
+    while(tmp != NULL)
+    {
+        if(strcmp(name, tmp->funName))
+            return 0;
+        else tmp = tmp->next;
+    }
+    return 1;
+}
+
+void insert_fun(char *name)
+{
+    if(funHead == NULL)
+    {
+        funHead = (struct definedFunctions *)malloc(sizeof(struct definedFunctions));
+        funHead->funName = name;
+        funHead->next = NULL;
+        funHead->argsHead = NULL;
+        funHead->argNum = 0;
+    }
+    else
+    {
+        struct definedFunctions *curr = (struct definedFunctions *)malloc(sizeof(struct definedFunctions));
+        struct definedFunctions *tmp1;
+        struct definedFunctions *tmp2;
+        tmp1 = funHead;
+
+        while(tmp1 != NULL)
+        {
+            tmp2 = tmp1;
+            tmp1 = tmp1->next;
+        }
+        
+        tmp2->next = curr; 
+        curr->funName = name;
+        curr->next = NULL;
+        curr->argsHead = NULL;
+        curr->argNum = 0;
+    }
+}
+
+int insertArg(char *funName, char *argName, int argType, int tokenID)
+{
+    struct definedFunctions *tmp = funHead;
+    
+    if(funHead == NULL)
+        printf("fun-head = null\n");
+
+    while(tmp != NULL)
+    {
+        if(strcmp(funName, tmp->funName) == 0)
+        {
+            if(tmp->argsHead == NULL)
+            {
+                struct funArg *head = (struct funArg *)malloc(sizeof(struct funArg));
+                head->funName = funName;
+                head->argName = argName;
+                head->tokenID = tokenID;
+                head->argType = argType;
+                head->next = NULL;
+                tmp->argsHead = head;
+                tmp->argNum++;
+                printf("insert-arg: argsHead = NULL\n");
+                return 0;
+            }
+            else
+            {
+                struct funArg *curr = (struct funArg *)malloc(sizeof(struct funArg));
+                struct funArg *tmp1;
+                struct funArg *tmp2;
+                tmp1 = tmp->argsHead;
+                while(tmp1 != NULL)
+                {
+                    tmp2 = tmp1;
+                    tmp1 = tmp1->next;
+                }
+                tmp2->next = curr;
+                //strcpy(curr->lexem, $1); 
+                curr->funName = funName;
+                curr->argName = argName;
+                curr->tokenID = tokenID;
+                curr->argType = argType;
+                curr->next = NULL;
+                tmp->argNum++;
+                printf("insert-arg: argsHead NOT NULL\n");
+                return 0;
+            }
+        }
+        tmp = tmp->next;
+    }
+    return 0;
+}
+
+void insert_retType(char *funName, int retType)
+{
+    struct definedFunctions *tmp = funHead;
+    while(tmp != NULL)
+    {
+        if(strcmp(funName, tmp->funName))
+            tmp->retType = retType;
+        else tmp = tmp->next;
+    }
 }
