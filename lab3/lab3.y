@@ -20,7 +20,8 @@ struct definedFunctions* findFun(char *name);
 struct kleeneStar{
     char *lexem;
     int tokenID;
-    struct kleeneStar *next; 
+    struct kleeneStar *next;
+    struct ast* optional2;
 };
 
 struct funArg{
@@ -48,13 +49,14 @@ struct varList{
 struct definedFunctions *funHead;
 struct varList *varHead;
 
-struct funArg *headOptinal1;
+struct kleeneStar *headOptional2;
 struct kleeneStar *headExtraPlus;
 struct kleeneStar *headExtraMult;
 struct kleeneStar *headExtraAND;
 struct kleeneStar *headExtraOR;
 
 char *lastDefinedFun;
+int lastCalledFun;
 int *symTable;
 
 int additionalPlus;
@@ -72,10 +74,10 @@ int err;
 }
 
 %start program
-%token EVAL LP RP PLUS MINUS MULT DEFINEFUN VAR GETINT GETBOOL LET IF PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER COMMENT FUNID VARID CALL
+%token EVAL LP RP PLUS MINUS MULT DEFINEFUN VAR GETINT GETBOOL LET IF PRINT DIV MOD TRUE FALSE NOT OR AND EQUAL LEQ GEQ LESS GREATER COMMENT FUNID VARID CALL ARGID
 %token<str> ID NUMBER 
 %token<num> INT BOOL NOTYET
-%type<num> argtype argid optional1 varid funid expr type 
+%type<num> argtype argid optional1 varid funid expr type funcall
 %%
 program:  LP DEFINEFUN LP funid optional1 RP type expr RP program {
                 struct ast* tmp = find_ast_node($4);
@@ -119,8 +121,11 @@ funid: ID {
                 $$ = insert_node($1, FUNID);
                 printf("Funid: %s\n", $1);
             }
-            else 
+            else
+            {
                 printf("Function '%s' is already defined\n", $1);
+                exit(1);
+            } 
         }
     ;
 eval: EVAL {evalFLAG = 1;} 
@@ -168,22 +173,21 @@ optional1: /* epsilon */
         }
         ;
 
-argtype: INT { $$ = insert_node($1, INT);}
-       | BOOL{ $$ = insert_node($1, BOOL);}
+argtype: INT {$$ = INT;}
+       | BOOL {$$ = BOOL;}
        ;
 
-argid: ID { $$ = insert_node($1, VARID);}
+argid: ID { $$ = insert_node($1, ARGID);}
     ;
-type: INT { $$ = insert_node($1, INT);}
-    | BOOL{ $$ = insert_node($1, BOOL);}
+type: INT {$$ = INT;}
+    | BOOL {$$ = BOOL;}
     ;
-    
 
 expr: NUMBER {$$ = insert_node($1, NUMBER);}
     | ID {
             if(evalFLAG == 1) {
                 err = 1; yyerror("syntax error : variables cannot be declared inside eval\n");
-                } 
+                }     
             $$ = insert_node($1, VARID);
         }
     | LP GETINT RP {
@@ -226,10 +230,22 @@ expr: NUMBER {$$ = insert_node($1, NUMBER);}
             insert_children(3, $3, $4, $5);
             $$ = insert_node("IF", IF);
     }
-    | LP ID optional2 RP {if(evalFLAG == 1) { 
-                            err = 1; yyerror("syntax error : functions cannot called inside eval\n");
-                            }
-                            $$ = insert_node($2, CALL);
+    | LP ID optional2 RP {
+                                if(evalFLAG == 1) {err = 1; yyerror("syntax error : functions cannot called inside eval\n");}
+                                printf("After Op2 #\n");
+                                int children_total = 0;
+                                while(headOptional2 != NULL)
+                                {   
+                                    children_total++;
+                                    insert_child(headOptional2->tokenID);
+                                    headOptional2 = headOptional2->next;
+                                }
+                                struct definedFunctions *fun = findFun($2);
+                                $$ = insert_node($2, CALL);
+                                
+                                if(fun->argNum != children_total) 
+                                    printf("Number of args of '%s' desn't match the definition\n", $2);
+                                //$$ = headOptional2->optional2->id;
                             }
     | LP LET LP varid expr RP expr RP {
                 if(evalFLAG == 1) {err = 1; yyerror("syntax error : let cannot be declared inside eval\n");
@@ -287,13 +303,55 @@ expr: NUMBER {$$ = insert_node($1, NUMBER);}
     }
     ;
 
+funcall: ID {
+                if(check_fun_define($1) == 0)
+                {
+                    $$ = insert_node($1, CALL);
+                    headOptional2->tokenID = $$;
+                    headOptional2->next = NULL;
+                    lastCalledFun = $$;
+                }
+                else{
+                        printf("'%s' is not defined\n", $1);
+                        exit(1);
+                    }
+        }
+        ;
+
+
 varid: ID { 
                 insertVar($1, NOTYET, false);
                 $$ = insert_node($1, VARID);
+                printf("%d\n", $$);
         }
      ;
 optional2: /* epsilon */ 
-         | expr
+         | expr optional2{
+            if(headOptional2 == NULL) 
+            {
+                headOptional2 = (struct kleeneStar *)malloc(sizeof(struct kleeneStar));
+                //strcpy(headExtraPlus->lexem, $1);
+                headOptional2->tokenID = $1; 
+                headOptional2->next = NULL;
+            }
+            else {
+                struct kleeneStar *curr = (struct kleeneStar *)malloc(sizeof(struct kleeneStar));
+                struct kleeneStar *tmp1;
+                struct kleeneStar *tmp2;
+                tmp1 = headOptional2;
+                while(tmp1 != NULL)
+                {
+                    tmp2 = tmp1;
+                    tmp1 = tmp1->next;
+                }
+                tmp2->next = curr;
+                //strcpy(curr->lexem, $1); 
+                curr->tokenID = $1;
+                curr->next = NULL;
+            }
+
+
+         }
          ;
 
 extraPlus: 
@@ -409,7 +467,7 @@ extraOR: /* epsilon */
 void main()
 {   funHead = NULL;
     varHead = NULL;
-    headOptinal1 = NULL;
+    headOptional2 = NULL;
     headExtraPlus = NULL;
     additionalPlus = 0;
     additionalMult = 1;
