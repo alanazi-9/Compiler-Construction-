@@ -168,15 +168,16 @@ optional1: /* epsilon */
         }
         ;
 
-argtype: INT {$$ = INT;}
-       | BOOL {$$ = BOOL;}
+argtype: INT { $$ = insert_node($1, INT);}
+       | BOOL{ $$ = insert_node($1, BOOL);}
        ;
 
 argid: ID { $$ = insert_node($1, VARID);}
     ;
-type: INT {$$ = INT;}
-    | BOOL {$$ = BOOL;}
+type: INT { $$ = insert_node($1, INT);}
+    | BOOL{ $$ = insert_node($1, BOOL);}
     ;
+    
 
 expr: NUMBER {$$ = insert_node($1, NUMBER);}
     | ID {
