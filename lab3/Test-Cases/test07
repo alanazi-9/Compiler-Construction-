@@ -1,0 +1,4 @@
+; error in if statment ('if fla term term' or 'if fla fla fla') (here, if fla term fla)
+(define-fun (f1 (v1 int)) int (+ v1 2))
+(define-fun (f2 (v1 int) (v2 int) (v3 int) (v4 bool)) int (if (< v1 v2) v3 v4))
+(eval (* 2 2 3 3 4 4))
