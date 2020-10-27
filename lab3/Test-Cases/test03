@@ -1,0 +1,3 @@
+; error in argument type (v2 is int)
+(define-fun (f1 (v1 bool) (v2 int)) int (* 1 2))
+(print (f1 (< 1 2) (not (= 1 1))))
