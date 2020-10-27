@@ -11,6 +11,10 @@ int commentLine;
 
 %%
 
+[[] {}
+[]] {}
+['] {}
+[,] {}
 [ \t\n] {}
 ";" {commentLine = yylineno;}
 [-] {if(yylineno != commentLine) return MINUS;}
