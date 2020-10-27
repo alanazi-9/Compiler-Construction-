@@ -1,0 +1,5 @@
+; error in function definition (f2 is already defined) 
+(define-fun (f1 (v1 int) (v2 int)) int (* v1 v2))
+(define-fun (f2) bool (= (f1 2 2) 4))
+(define-fun (f2) int (+ 1 4))
+(print (f2))
