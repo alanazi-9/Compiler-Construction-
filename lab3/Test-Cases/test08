@@ -1,0 +1,6 @@
+; error in 'and' operation  [and fla fla] here, [and fla term]
+(define-fun (f1 (v1 int)) int (+ v1 2))
+(define-fun (f2) int (if (< 1 2) 1 2))
+(define-fun (f3 (v1 int)) bool (< v1 1))
+(define-fun (f4 (v1 bool)) bool (and v1 2))
+(print (f1 (* 2 (* 2 3 4 5))))
