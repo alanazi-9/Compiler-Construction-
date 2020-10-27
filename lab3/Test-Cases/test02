@@ -1,0 +1,4 @@
+; error in argument numbers of f1 
+(define-fun (f1 (v1 bool)) bool (< 1 2))
+(define-fun (f2 (v2 bool) (v3 int)) bool (< 1 2))
+(print (f1 (< 1 2) 1))
