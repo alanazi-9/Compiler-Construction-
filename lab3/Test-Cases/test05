@@ -1,0 +1,5 @@
+; error in '+' operation needs term term (+ term term) [here, x is Boolean]
+(define-fun (f1 (v1 int) (v2 int)) int (* v1 v2))
+(define-fun (f2) bool (= (f1 2 2) 4))
+(define-fun (f3) int (let (x true) (+ x 1)))
+(print (f2))
