@@ -1,0 +1,4 @@
+; error in variable definition (v1 is defined before as an argument)
+(define-fun (f1 (v1 int)) int (let (v1 2) (+ v1 1)))
+(define-fun (f2) int (- 1 4))
+(print (f2))
