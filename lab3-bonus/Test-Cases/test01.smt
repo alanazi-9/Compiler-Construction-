@@ -1,0 +1,5 @@
+(declare-var get_int_out_0 Int)
+(define-fun f1 ((v1 Int) (v2 Int) (v3 Int) (v4 Int)) Int (+ (+ v1 v2) (+ v3 v4)))
+(define-fun f2 ((v5 Int)) Bool (< (f1 7 5 9 1) (f1 2 4 5 8)))
+(assert (f2 get_int_out_0))
+(check-sat)
