@@ -1,0 +1,4 @@
+; unsat example 1 (unsat because 22 is not less than 19)
+(define-fun (f1 (v1 int) (v2 int) (v3 int) (v4 int)) int (+ (+ v1 v2) (+ v3 v4)))
+(define-fun (f2 (v5 int)) bool (< (f1 7 5 9 1) (f1 2 4 5 8)))
+(error (f2 (get-int)))
