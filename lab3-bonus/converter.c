@@ -540,6 +540,9 @@ int conert_to_smt(struct ast* ast)
 
                 child_tree(grand_child->id);
                 grand_child = grand_child->next;
+                
+                if(grand_child != NULL)
+                    fprintf(smt_file," ");
             }
         }
         fprintf(smt_file,")");
