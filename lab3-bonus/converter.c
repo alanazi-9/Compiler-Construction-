@@ -413,6 +413,7 @@ int calc_get_int(struct ast* ast)
     if(ast->ntoken == CALL && strcmp(ast->token, "get-int") == 0)
     {
         get_int_total++;
+        return 0;
     }
 }
 
