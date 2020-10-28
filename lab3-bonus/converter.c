@@ -538,11 +538,9 @@ int conert_to_smt(struct ast* ast)
                 if(DEBUGMODE)
                     printf("[error] expr(%s) (child %d): %s\n", child->id->token, i, grand_child->id->token);
 
+                fprintf(smt_file," ");
                 child_tree(grand_child->id);
                 grand_child = grand_child->next;
-                
-                if(grand_child != NULL)
-                    fprintf(smt_file," ");
             }
         }
         fprintf(smt_file,")");
