@@ -1,0 +1,6 @@
+After compiling by make, run the program as following:
+a.out < inputfile
+
+'inputfile' is a file of the program to be converted to SMT-LIB2
+
+After executing the program, it will generate the converted program named 'converted.smt'
