@@ -1,0 +1,4 @@
+; example 2 (3 get-int calls)
+(define-fun (f1 (a1 int) (a2 int) (a3 int)) bool (< a1 a2))
+(define-fun (f2 (a1 int)) int (* 2 2))
+(error (f1 (get-int) (get-int) (f2 (get-int))))
