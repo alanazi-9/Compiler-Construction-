@@ -221,7 +221,7 @@ expr: NUMBER {$$ = insert_node($1, NUMBER);}
                     yyerror("syntax error : let cannot be declared inside eval\n");
                 }
                 insert_children(3, $4, $5, $7);
-                $$ = insert_node("LET", LET);
+                $$ = insert_node("let", LET);
                 }
     | TRUE {$$ = insert_node("true", TRUE);}
     | FALSE {$$ = insert_node("false", FALSE);}
