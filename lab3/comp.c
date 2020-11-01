@@ -14,6 +14,7 @@ struct varList{
     char *funName;
     char *varName;
     char  *varType;
+    int letID;
     struct varList *next;
 };
 
@@ -241,20 +242,26 @@ int check_fun_define(char *name)
     return 1;
 }
 
-int check_var(char *funName, char *varName)
+int check_var(char *funName, char *varName, int letID)
 {
     struct varList *tmp = varHead;
 
     while(tmp != NULL)
     {
         if(strcmp(funName, tmp->funName) == 0 && strcmp(varName, tmp->varName) == 0)
-            return 0;
+        {
+            if(tmp->letID == 0 && letID >= 0)
+                return 0;
+
+            if(tmp->letID == letID)
+                return 0;
+        }
         else tmp = tmp->next;
     }
     return 1;
 }
 
-void insert_fun(struct definedFunctions *fun)
+int insert_fun(struct definedFunctions *fun)
 {
     if(funHead == NULL)
     {
@@ -269,6 +276,8 @@ void insert_fun(struct definedFunctions *fun)
 
         if(DEBUGMODE)
             printf("funHead name: %s\n", fun->funName);
+
+        return 0;
     }
     else
     {
@@ -289,100 +298,113 @@ void insert_fun(struct definedFunctions *fun)
 
             if(DEBUGMODE)
                 printf("INSIDE insert-fun {curr} Fun name: %s No. Args: %d Ret. Type: %s\n", curr->funName, curr->argNum, curr->retType);
+
+            return 0;
         }
         else{
             printf("'%s' function is already defined\n",fun->funName);
-            exit(1);
+            return 1;
         }
     }
 }
 
-void insert_var(char *funName, char *varName, char *varType)
+int insert_var(char *funName, char *varName, char *varType, int letID)
 {
     if(varHead == NULL)
     {
+        if(check_fun_define(varName) == 0)
+        {
+            printf("'%s' variable is already defined as a function\n",varName);
+            return 1;
+        }
+
         varHead = (struct varList *)malloc(sizeof(struct varList));
         varHead->funName = funName;
         varHead->varName = varName;
         varHead->varType = varType;
+        varHead->letID = letID;
         varHead->next = NULL;
         lastVar = varHead;
+        return 0;
     }
     else{
-        if(check_var(funName, varName) == 1)
+        if(check_var(funName, varName, letID) == 1)
         {
+            if(check_fun_define(varName) == 0)
+            {
+                printf("'%s' variable is already defined as a function\n", varName);
+                return 1;
+            }
+
             struct varList *curr = (struct varList *)malloc(sizeof(struct varList));
             curr->funName = funName;
             curr->varName = varName;
             curr->varType = varType;
+            curr->letID = letID;
             curr->next = NULL;
             lastVar->next = curr;
             lastVar = curr;
+            return 0;
         }
         else
         {
-            printf("'%s' variable is already defined\n",varName);
-            exit(1);
+            printf("'%s' variable is already defined\n", varName);
+            return 1;
         }
     }
 }
 int fillSymTable(struct ast* ast)
 {
-    /*if(DEBUGMODE)
-    {
-        struct ast* tmp = ast;
-        while(tmp != NULL)
-        {
-            printf("ast token: %s ast number: %d", tmp->token, tmp->ntoken);
-            if(tmp->next != NULL)
-            {
-                printf(" Next ast token: %s Next ast number: %d\n", tmp->next->token, tmp->next->ntoken);
-            }
-            tmp = tmp->next;
-        }
-    }*/
-
     if(ast->ntoken == FUNID)
     {
         if(DEBUGMODE)
             printf("fillSymTable: currToken == FUNID\n");
-
-        if(check_fun_define(ast->token) == 1)
-        {   
-            if(DEBUGMODE)
-                printf("fillSymTable: fun NOT in the symbol table\n");
+   
+        if(DEBUGMODE)
+            printf("fillSymTable: fun NOT in the symbol table\n");
             
-            struct definedFunctions *fun = (struct definedFunctions *)malloc(sizeof(struct definedFunctions));
-            fun->funName = ast->token;
-            fun->argNum = 0;
-            fun->next = NULL;
+        struct definedFunctions *fun = (struct definedFunctions *)malloc(sizeof(struct definedFunctions));
+        fun->funName = ast->token;
+        fun->argNum = 0;
+        fun->next = NULL;
 
-            if(ast->next->ntoken == FUNRET)
-            {
-                fun->retType = ast->next->token;
-                insert_fun(fun);
-            }
-            else{
-                    argID = ast->next;
+        if(ast->next->ntoken == FUNRET)
+        {
+            fun->retType = ast->next->token;
+            return insert_fun(fun);
+        }
+        else{
+                argID = ast->next;
+                argType = argID->next;
+                fun->argNum++;
+
+                if(strcmp(fun->funName, argID->token) == 0)
+                {
+                    printf("'%s' variable is already defined as a function\n", argID->token);
+                    return 1;
+                }
+
+                if(insert_var(fun->funName, argID->token, argType->token, 0) == 1)
+                    return 1;
+
+                while(argType->next->ntoken != FUNRET)
+                {
+                    argID = argType->next;
                     argType = argID->next;
                     fun->argNum++;
-                    insert_var(fun->funName, argID->token, argType->token);
-                    while(argType->next->ntoken != FUNRET)
-                    {
-                        argID = argType->next;
-                        argType = argID->next;
-                        fun->argNum++;
-                        insert_var(fun->funName, argID->token, argType->token);
-                    }
-                    fun->retType = argType->next->token;
-                    insert_fun(fun);
-            }    
-        }
-        else {
-            printf("'%s' function is already defined\n", ast->token);
-            exit(1);
-        }
 
+                    if(strcmp(fun->funName, argID->token) == 0)
+                    {
+                        printf("'%s' variable is already defined as a function\n", argID->token);
+                        return 1;
+                    }
+
+                    if(insert_var(fun->funName, argID->token, argType->token, 0) == 1)
+                        return 1;
+                }
+                fun->retType = argType->next->token;
+                return insert_fun(fun);
+            }    
     }
     if(ast->ntoken == LET)
     {
@@ -401,7 +423,22 @@ int fillSymTable(struct ast* ast)
         else    
             type = "Bool";
 
-        insert_var(funName, currChild->id->token, type);
+        if(check_fun_define(currChild->id->token) == 0 || check_var(currChild->id->token, funName, ast->id) == 0)
+        {
+            printf("Variable is defioned before\n");
+            return 1;
+        }
+
+        while(parent != NULL)
+        {
+            if(parent->ntoken == LET && strcmp(parent->child->id->token, currChild->id->token) == 0)
+            {
+                printf("Variable '%s' is defioned before in '%s'\n", currChild->id->token, parent->token);
+                return 1;
+            }  
+            parent = parent->parent; 
+        }
+        return insert_var(funName, currChild->id->token, type, ast->id);
     }
 
 }
