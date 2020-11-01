@@ -7,6 +7,9 @@ struct definedFunctions{
     char *funName;
     int argNum;
     char *retType;
+    int calls;
+    int call_tracker;
+    bool get_int;
     struct definedFunctions *next;
 };
 
@@ -14,6 +17,7 @@ struct varList{
     char *funName;
     char *varName;
     char  *varType;
+    int letID;
     struct varList *next;
 };
 
@@ -22,6 +26,8 @@ struct definedFunctions *funHead;
 struct varList *varHead;
 struct definedFunctions *lastFun;
 struct varList *lastVar;
+
+struct definedFunctions *fun_get_int;
 
 struct ast* argID;
 struct ast* argType;
@@ -34,10 +40,10 @@ int yyparse();
 
 char* get_type(int type)
 {
-    if (type == INT || type == NUMBER || type == PLUS || type == MINUS || type == MULT || type == DIV || type == MOD || type == GETINT)
+    if (type == INT || type == NUMBER || type == PLUS || type == MINUS || type == MULT || type == DIV || type == MOD)
         return "Int";
     
-    if (type == BOOL || type == TRUE || type == FALSE || type == NOT || type == AND || type == OR ||type == EQUAL || type == GREATER || type == LESS || type == LEQ || type == GEQ || type == GETBOOL)
+    if (type == BOOL || type == TRUE || type == FALSE || type == NOT || type == AND || type == OR ||type == EQUAL || type == GREATER || type == LESS || type == LEQ || type == GEQ)
         return "Bool";
 }
 
@@ -53,13 +59,13 @@ struct definedFunctions* get_fun(char* name)
     return NULL;
 }
 
-struct varList* get_var(char *funName, char *varName)
+struct varList* get_var(char *funName, char *varName, int letID)
 {
     struct varList *tmp = varHead;
 
     while(tmp != NULL)
     {
-        if(strcmp(funName, tmp->funName) == 0 && strcmp(varName, tmp->varName) == 0)
+        if(strcmp(funName, tmp->funName) == 0 && strcmp(varName, tmp->varName) == 0 && tmp->letID == letID)
             return tmp;
         else tmp = tmp->next;
     }
@@ -92,10 +98,10 @@ struct varList* get_arg(char *funName, int number)
 
 char *get_fun_name(struct ast* ast)
 {
-    struct ast_child* child;
+   struct ast_child* child;
     while(ast != NULL)
     {
-        if(ast->ntoken == PRINT && ast->parent == NULL|| ast->ntoken == EVAL && ast->parent == NULL)
+        if(ast->ntoken == PRINT && ast->parent == NULL|| ast->ntoken == EVAL && ast->parent == NULL || ast->ntoken == ERROR && ast->parent == NULL)
         {
             if(DEBUGMODE)
                 printf("get_fun_name: %s\n", ast->child->id->token);
@@ -133,8 +139,25 @@ int is_fla(struct ast* ast)
     }
     else if(ast->ntoken == VARID)
     {
+        struct varList* varid;
+        struct ast *parent = ast->parent;
         char *funName = get_fun_name(ast->parent);
-        struct varList* varid = get_var(funName, ast->token);
+        int check = 0;
+
+        while(parent != NULL)
+        {
+            varid = get_var(funName, ast->token, parent->id);
+            if(varid != NULL)
+            {
+                check = 1;
+                break;
+            }
+            else 
+                parent = parent->next;
+        }
+
+        if(check == 0)
+            varid = get_var(funName, ast->token, 0);
 
         if(varid != NULL)
         {
@@ -159,7 +182,7 @@ int is_fla(struct ast* ast)
         struct ast_child* child = ast->child->next->next;
         return is_fla(child->id);
     }
-    else if (ast->ntoken == BOOL || ast->ntoken == TRUE || ast->ntoken == FALSE || ast->ntoken == NOT || ast->ntoken == AND || ast->ntoken == OR ||ast->ntoken == EQUAL || ast->ntoken == GREATER || ast->ntoken == LESS || ast->ntoken == LEQ || ast->ntoken == GEQ || ast->ntoken == GETBOOL)
+    else if (ast->ntoken == BOOL || ast->ntoken == TRUE || ast->ntoken == FALSE || ast->ntoken == NOT || ast->ntoken == AND || ast->ntoken == OR ||ast->ntoken == EQUAL || ast->ntoken == GREATER || ast->ntoken == LESS || ast->ntoken == LEQ || ast->ntoken == GEQ)
             return 1;
     else 
         return 0;
@@ -185,8 +208,25 @@ int is_term(struct ast* ast)
     }
     else if(ast->ntoken == VARID)
     {
+        struct varList* varid;
+        struct ast *parent = ast->parent;
         char *funName = get_fun_name(ast->parent);
-        struct varList* varid = get_var(funName, ast->token);
+        int check = 0;
+
+        while(parent != NULL)
+        {
+            varid = get_var(funName, ast->token, parent->id);
+            if(varid != NULL)
+            {
+                check = 1;
+                break;
+            }
+            else 
+                parent = parent->next;
+        }
+
+        if(check == 0)
+            varid = get_var(funName, ast->token, 0);
 
         if(varid != NULL)
         {
@@ -211,7 +251,7 @@ int is_term(struct ast* ast)
         struct ast_child* child = ast->child->next->next;
         return is_term(child->id);
     }
-    else if (ast->ntoken == INT || ast->ntoken == NUMBER || ast->ntoken == PLUS || ast->ntoken == MINUS || ast->ntoken == MULT || ast->ntoken == DIV || ast->ntoken == MOD || ast->ntoken == GETINT)
+    else if (ast->ntoken == INT || ast->ntoken == NUMBER || ast->ntoken == PLUS || ast->ntoken == MINUS || ast->ntoken == MULT || ast->ntoken == DIV || ast->ntoken == MOD)
         return 1;
     else
         return 0;
@@ -245,14 +285,20 @@ int check_fun_define(char *name)
     return 1;
 }
 
-int check_var(char *funName, char *varName)
+int check_var(char *funName, char *varName, int letID)
 {
     struct varList *tmp = varHead;
 
     while(tmp != NULL)
     {
         if(strcmp(funName, tmp->funName) == 0 && strcmp(varName, tmp->varName) == 0)
-            return 0;
+        {
+            if(tmp->letID == 0 && letID >= 0)
+                return 0;
+
+            if(tmp->letID == letID)
+                return 0;
+        }
         else tmp = tmp->next;
     }
     return 1;
@@ -269,6 +315,9 @@ int insert_fun(struct definedFunctions *fun)
         funHead->funName = fun->funName;
         funHead->retType = fun->retType;
         funHead->argNum = fun->argNum;
+        funHead->calls = fun->calls;
+        funHead->call_tracker = fun->call_tracker;
+        funHead->get_int = fun->get_int;
         lastFun = funHead;
 
         if(DEBUGMODE)
@@ -291,6 +340,9 @@ int insert_fun(struct definedFunctions *fun)
             curr->funName = fun->funName;
             curr->retType = fun->retType;
             curr->argNum = fun->argNum;
+            curr->calls = fun->calls;
+            funHead->call_tracker = fun->call_tracker;
+            curr->get_int = fun->get_int;
             lastFun = curr;
 
             if(DEBUGMODE)
@@ -305,25 +357,39 @@ int insert_fun(struct definedFunctions *fun)
     }
 }
 
-int insert_var(char *funName, char *varName, char *varType)
+int insert_var(char *funName, char *varName, char *varType, int letID)
 {
     if(varHead == NULL)
     {
+        if(check_fun_define(varName) == 0)
+        {
+            printf("'%s' variable is already defined as a function\n",varName);
+            return 1;
+        }
+
         varHead = (struct varList *)malloc(sizeof(struct varList));
         varHead->funName = funName;
         varHead->varName = varName;
         varHead->varType = varType;
+        varHead->letID = letID;
         varHead->next = NULL;
         lastVar = varHead;
         return 0;
     }
     else{
-        if(check_var(funName, varName) == 1)
+        if(check_var(funName, varName, letID) == 1)
         {
+            if(check_fun_define(varName) == 0)
+            {
+                printf("'%s' variable is already defined as a function\n", varName);
+                return 1;
+            }
+
             struct varList *curr = (struct varList *)malloc(sizeof(struct varList));
             curr->funName = funName;
             curr->varName = varName;
             curr->varType = varType;
+            curr->letID = letID;
             curr->next = NULL;
             lastVar->next = curr;
             lastVar = curr;
@@ -331,58 +397,72 @@ int insert_var(char *funName, char *varName, char *varType)
         }
         else
         {
-            printf("'%s' variable is already defined\n",varName);
+            printf("'%s' variable is already defined\n", varName);
             return 1;
         }
     }
 }
 int fillSymTable(struct ast* ast)
 {
-    /*if(DEBUGMODE)
-    {
-        struct ast* tmp = ast;
-        while(tmp != NULL)
-        {
-            printf("ast token: %s ast number: %d", tmp->token, tmp->ntoken);
-            if(tmp->next != NULL)
-            {
-                printf(" Next ast token: %s Next ast number: %d\n", tmp->next->token, tmp->next->ntoken);
-            }
-            tmp = tmp->next;
-        }
-    }*/
-
     if(ast->ntoken == FUNID)
     {
         if(DEBUGMODE)
             printf("fillSymTable: currToken == FUNID\n");
-  
+   
         if(DEBUGMODE)
             printf("fillSymTable: fun NOT in the symbol table\n");
             
         struct definedFunctions *fun = (struct definedFunctions *)malloc(sizeof(struct definedFunctions));
         fun->funName = ast->token;
         fun->argNum = 0;
+        fun->calls = 0;
+        fun->call_tracker = 0;
+        fun->get_int = false;
         fun->next = NULL;
 
         if(ast->next->ntoken == FUNRET)
         {
             fun->retType = ast->next->token;
+
+            if(strcmp(ast->next->next->token, "get-int") == 0)
+                fun->get_int = true;
+
             return insert_fun(fun);
         }
         else{
                 argID = ast->next;
                 argType = argID->next;
                 fun->argNum++;
-                insert_var(fun->funName, argID->token, argType->token);
+
+                if(strcmp(fun->funName, argID->token) == 0)
+                {
+                    printf("'%s' variable is already defined as a function\n", argID->token);
+                    return 1;
+                }
+
+                if(insert_var(fun->funName, argID->token, argType->token, 0) == 1)
+                    return 1;
+
                 while(argType->next->ntoken != FUNRET)
                 {
                     argID = argType->next;
                     argType = argID->next;
                     fun->argNum++;
-                    insert_var(fun->funName, argID->token, argType->token);
+
+                    if(strcmp(fun->funName, argID->token) == 0)
+                    {
+                        printf("'%s' variable is already defined as a function\n", argID->token);
+                        return 1;
+                    }
+
+                    if(insert_var(fun->funName, argID->token, argType->token, 0) == 1)
+                        return 1;
                 }
                 fun->retType = argType->next->token;
+
+                if(strcmp(argType->next->next->token, "get-int") == 0)
+                    fun->get_int = true;
+
                 return insert_fun(fun);
             }    
     }
@@ -403,17 +483,49 @@ int fillSymTable(struct ast* ast)
         else    
             type = "Bool";
 
-        return insert_var(funName, currChild->id->token, type);
+        if(check_fun_define(currChild->id->token) == 0 || check_var(currChild->id->token, funName, ast->id) == 0)
+        {
+            printf("Variable is defioned before\n");
+            return 1;
+        }
+
+        while(parent != NULL)
+        {
+            if(parent->ntoken == LET && strcmp(parent->child->id->token, currChild->id->token) == 0)
+            {
+                printf("Variable '%s' is defioned before in '%s'\n", currChild->id->token, parent->token);
+                return 1;
+            }  
+            parent = parent->parent; 
+        }
+        return insert_var(funName, currChild->id->token, type, ast->id);
     }
 
 }
 
+
 int calc_get_int(struct ast* ast)
 {
-    if(ast->ntoken == CALL && strcmp(ast->token, "get-int") == 0)
+     if(ast->ntoken == CALL && strcmp(ast->token, "get-int") == 0)
     {
-        get_int_total++;
-        return 0;
+        if(ast->parent->ntoken == DEFINEFUN)
+        {
+            struct ast* parent = ast->parent;
+            struct ast_child* child = parent->child;
+            
+            while(child->id->ntoken != FUNRET)
+                child = child->next;
+
+            child = child->next;
+
+            if(strcmp(child->id->token, "get-int") == 0)
+                return 0;
+        }
+        else
+        {
+            get_int_total++;
+            return 0;
+        }
     }
 }
 
@@ -421,28 +533,103 @@ int child_tree(struct ast* ast)
 {
     if(ast->child == NULL)
     {
-        if(strcmp(ast->token, "get-int") == 0)
+        if(ast->ntoken == CALL)
         {
-            fprintf(smt_file,"get_int_out_%d", get_int_tracker);
-            get_int_tracker++;
+            if(strcmp(ast->token, "get-int") == 0)
+            {
+                fprintf(smt_file,"get_int_out_%d", get_int_tracker);
+                get_int_tracker++;
+            }
+            else
+            {
+                fun_get_int = get_fun(ast->token);
+
+                if(fun_get_int->get_int == true && fun_get_int->calls > 1)
+                {
+                    //printf("call no. %d of %s", fun_get_int->call_tracker, ast->token);
+                    fprintf(smt_file,"%s%d", ast->token, fun_get_int->call_tracker);
+                    fun_get_int->call_tracker++;  
+                }
+                else 
+                    fprintf(smt_file,"%s", ast->token);
+            }
+            if(ast->parent->ntoken == LET && ast->parent->child->next->id->id == ast->id)
+                    fprintf(smt_file,"))");
         }
-        else  
+        else
+        {
+            if(ast->parent->ntoken == LET && ast->ntoken == VARID)
+                    fprintf(smt_file,"((");
+
             fprintf(smt_file,"%s", ast->token);
+
+            if(ast->parent->ntoken == LET && ast->parent->child->next->id->id == ast->id)
+                    fprintf(smt_file,"))");
+        }  
+            
         
     }
     else
     {
         struct ast_child* child = ast->child;
-        fprintf(smt_file,"(%s", ast->token);
-        while(child != NULL)
+        if(ast->ntoken == CALL && strcmp(ast->token, "get-int") != 0)
         {
-            fprintf(smt_file," ");
-            child_tree(child->id);
-            child = child->next;
-        }
-        fprintf(smt_file,")");
+            fun_get_int = get_fun(ast->token);
+            if(fun_get_int->get_int == true && fun_get_int->call_tracker > 1)
+            {
+                fprintf(smt_file,"(%s%d", ast->token, fun_get_int->call_tracker);
+                fun_get_int->call_tracker++;
+                while(child != NULL)
+                {
+                    fprintf(smt_file," ");
+                    child_tree(child->id);
+                    child = child->next;
+                }
+                fprintf(smt_file,")");
+            }
+            else
+            {
+                fprintf(smt_file,"(%s", ast->token);
+                while(child != NULL)
+                {
+                    fprintf(smt_file," ");
+                    child_tree(child->id);
+                    child = child->next;
+                }
+                fprintf(smt_file,")");
+            }
+            
+        }  
+        else 
+        {
+            fprintf(smt_file,"(%s", ast->token);
 
+            while(child != NULL)
+            {
+                fprintf(smt_file," ");
+                child_tree(child->id);
+                child = child->next;
+            }
+            fprintf(smt_file,")");
+        }
     }
+}
+
+int calc_calls(struct ast* ast)
+{
+    if(ast->ntoken == CALL && strcmp(ast->token, "get-int") != 0)
+    {
+        fun_get_int = get_fun(ast->token);
+        if(fun_get_int != NULL)
+            if(fun_get_int->get_int == true)
+            {
+                fun_get_int->calls++;
+                if(DEBUGMODE)
+                    printf("calls: %d\n", fun_get_int->calls);
+                get_int_total++;
+            }
+    }
+    return 0;
 }
 
 int conert_to_smt(struct ast* ast)
@@ -466,70 +653,160 @@ int conert_to_smt(struct ast* ast)
         struct ast* parent = ast->parent;
         struct ast_child* child = parent->child;
 
-        if(DEBUGMODE)
-            printf("define-fun first child: %s\n", child->id->token);
+        fun_get_int = get_fun(child->id->token);
 
-        fprintf(smt_file,"(define-fun ");
-        fprintf(smt_file,"%s (", child->id->token);
-        child = child->next;
-        
-        if(child->id->ntoken != FUNRET) 
+        if(fun_get_int->get_int == true)
         {
-            int i = 1;
-            while(child->id->ntoken != FUNRET)
+            if(DEBUGMODE)
+                printf("currToken == FUNID\n"); 
+            for(int i = 0; i < fun_get_int->calls; i++)
             {
+                fprintf(smt_file,"(define-fun ");
+                if(fun_get_int->calls > 1)
+                    fprintf(smt_file,"%s%d (", child->id->token, i);
+                else
+                    fprintf(smt_file,"%s (", child->id->token);
+
                 if(DEBUGMODE)
-                    printf("argument %d: %s type: %s\n", i, child->id->token, child->next->id->token);
+                    printf("currToken == FUNID i = %d fun: %s%d\n", i, child->id->token, i);
 
-                fprintf(smt_file,"(%s %s)", child->id->token, child->next->id->token);
-                child = child->next->next;
+                child = child->next;
+                if(DEBUGMODE)
+                    printf("currToken == FUNID funret: %s\n",child->id->token);
 
-                if(child->id->ntoken != FUNRET) //to add a space between arguments if it is not the last argument
-                    fprintf(smt_file," ");
+                if(child->id->ntoken != FUNRET) 
+                {
+                    if(DEBUGMODE)
+                        printf("currToken == FUNID i = %d\n", i);
 
-                i++;
+                    int i = 1;
+                    while(child->id->ntoken != FUNRET)
+                    {
+                        if(DEBUGMODE)
+                            printf("argument %d: %s type: %s\n", i, child->id->token, child->next->id->token);
+
+                        fprintf(smt_file,"(%s %s)", child->id->token, child->next->id->token);
+                        child = child->next->next;
+
+                        if(child->id->ntoken != FUNRET) //to add a space between arguments if it is not the last argument
+                            fprintf(smt_file," ");
+
+                        i++;
+                    }
+            
+                }
+                child = child->next;
+                fprintf(smt_file,") ");
+                child_tree(child->id);
+                child = parent->child;
+                fprintf(smt_file,")\n");
+
             }
             
         }
-
-        if(DEBUGMODE)
-            printf("return type: %s\n", child->id->token);
-
-        fprintf(smt_file,") %s ", child->id->token);
-        child = child->next;
-        fprintf(smt_file,"(%s", child->id->token);
-
-        if(child->id->child != NULL)
+        else
         {
-            int i = 1;
-            struct ast_child* grand_child = child->id->child;
-            while(grand_child != NULL)
-            {
                 if(DEBUGMODE)
+                    printf("define-fun first child: %s\n", child->id->token);
+        
+                fprintf(smt_file,"(define-fun ");
+                fprintf(smt_file,"%s (", child->id->token);
+                child = child->next;
+                
+                if(child->id->ntoken != FUNRET) 
                 {
-                    printf("[define-fun] expr(%s) (child %d): %s\n", child->id->token, i, grand_child->id->token);
-                    i++;
+                    int i = 1;
+                    while(child->id->ntoken != FUNRET)
+                    {
+                        if(DEBUGMODE)
+                            printf("argument %d: %s type: %s\n", i, child->id->token, child->next->id->token);
+
+                        fprintf(smt_file,"(%s %s)", child->id->token, child->next->id->token);
+                        child = child->next->next;
+
+                        if(child->id->ntoken != FUNRET) //to add a space between arguments if it is not the last argument
+                            fprintf(smt_file," ");
+
+                        i++;
+                    }
+                    
                 }
 
-                fprintf(smt_file," ");
-                child_tree(grand_child->id);
-                grand_child = grand_child->next;
-            }
+                if(DEBUGMODE)
+                    printf("return type: %s\n", child->id->token);
+
+                fprintf(smt_file,") %s ", child->id->token);
+                child = child->next;
+                
+                
+                    fprintf(smt_file,"(%s", child->id->token);
+
+                    if(child->id->child != NULL)
+                    {
+                        int i = 1;
+                        struct ast_child* grand_child = child->id->child;
+                        while(grand_child != NULL)
+                        {
+                            if(DEBUGMODE)
+                            {
+                                printf("[define-fun] expr(%s) (child %d): %s\n", child->id->token, i, grand_child->id->token);
+                                i++;
+                            }
+
+                            fprintf(smt_file," ");
+                            child_tree(grand_child->id);
+                            grand_child = grand_child->next;
+                        }
+                    }  
+            fprintf(smt_file,")");
+            fprintf(smt_file,")\n");  
         }
-        fprintf(smt_file,")");
-        fprintf(smt_file,")\n");
+        
     }
     if(currToken == ERROR)
     {
         struct ast_child* child = ast->child;
 
         fprintf(smt_file,"(assert ");
-        fprintf(smt_file,"(%s ", child->id->token);
+        fprintf(smt_file,"(%s", child->id->token);
         
         if(DEBUGMODE)
             printf("assert first child: %s\n", child->id->token);
 
-        if(child->id->child != NULL)
+        /*if(child->id->ntoken == LET)
+        {
+            printf("LET child\n");
+            struct ast_child* letchild = child->id->child;
+
+            fprintf(smt_file,"(%s", letchild->id->token);
+            printf("LET child: %s\n", letchild->id->token);
+            letchild = letchild->next;
+            struct ast_child* grand_let_child = letchild->id->child;
+
+            int i = 1;
+            while(grand_let_child != NULL)
+            {
+                if(DEBUGMODE)
+                    printf("[error] expr(%s) (child %d): %s\n", child->id->token, i, grand_let_child->id->token);
+
+                fprintf(smt_file," ");
+                child_tree(grand_let_child->id);
+                grand_let_child = grand_let_child->next;
+            }
+            
+            letchild = letchild->next;
+            grand_let_child = grand_let_child->id->child;
+            while(grand_let_child != NULL)
+            {
+                if(DEBUGMODE)
+                    printf("[error] expr(%s) (child %d): %s\n", child->id->token, i, grand_let_child->id->token);
+
+                fprintf(smt_file," ");
+                child_tree(grand_let_child->id);
+                grand_let_child = grand_let_child->next;
+            }
+        }*/
+       if(child->id->child != NULL)
         {
             int i = 1;
             struct ast_child* grand_child = child->id->child;
@@ -826,7 +1103,8 @@ int main(void)
         smt_file = fopen("converted.smt","w");
 
         visit_ast(calc_get_int);
-        
+        visit_ast(calc_calls);
+
         if(DEBUGMODE)
             printf("get-int total: %d\n", get_int_total);
 
