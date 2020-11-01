@@ -1,0 +1,6 @@
+(declare-var get_int_out_0 Int)
+(declare-var get_int_out_1 Int)
+(define-fun empt0 () get_int_out_0)
+(define-fun empt1 () get_int_out_1)
+(assert (not (= empt0 empt1)))
+(check-sat)
