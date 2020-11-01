@@ -1,0 +1,2 @@
+(define-fun (empt) int (get-int))
+(error (not (= (empt) (empt))))
