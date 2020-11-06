@@ -1122,7 +1122,7 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
 
      if(node->parent != NULL && node->parent->ntoken == IF && get_child(node->parent, 3)->id == node->id && get_br_no(node->id) != NULL && get_br_no(node->id)->br_id == node->id)
     {
-        printf("if 3: node id: %d __ token: %s\n", node->id, node->token);
+        //printf("if 3: node id: %d __ token: %s\n", node->id, node->token);
         struct br* br = get_br_no(node->id);
         struct bb* bb = get_bb_no(node->id);
 
