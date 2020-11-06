@@ -1209,6 +1209,7 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
     }
     else 
     {
+        printf("token: %s\n", node->token);
         if(find_ast_node(last_define_fun_id)->ntoken == PRINT)
         {
             if(DEBUGMODE)
@@ -1245,6 +1246,7 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
         add_assignment(line, last_block_no);
         last_define_fun_id = get_define_fun_id(node);
         last_block_no++;
+        translate(node);
     }
 	
 	return 0;
