@@ -12,4 +12,4 @@ dot -Tpdf cfg.dot -o cfg.pdf
 
 ## KNOWN ISSUES:
 * somtimes the instructions in the join block is lost
-* In 'print' and 'eval' the first child/grand_child node is missing 
+* In 'print' and 'eval' the first child/grand_child node is missing [Fixed in Update 1.1]
