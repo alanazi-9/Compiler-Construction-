@@ -994,6 +994,13 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
     }
 
 
+    if(node->ntoken == TRUE || node->ntoken == FALSE)
+    {
+        line = (char*)malloc ( 50 * sizeof (char));
+        sprintf(line, "v%d := %s",node->id,node->token);
+        add_assignment(line, last_block_no);
+    }
+    
 	if(node->ntoken == NUMBER && node->parent->ntoken != CALL)
 	{
         if(DEBUGMODE)
