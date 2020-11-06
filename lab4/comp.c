@@ -1112,9 +1112,10 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
         }
         
     }
+
      if(node->parent != NULL && node->parent->ntoken == IF && get_child(node->parent, 3)->id == node->id && get_br_no(node->id) != NULL && get_br_no(node->id)->br_id == node->id)
     {
-        //printf("if 3: node id: %d\n", node->id);
+        printf("if 3: node id: %d __ token: %s\n", node->id, node->token);
         struct br* br = get_br_no(node->id);
         struct bb* bb = get_bb_no(node->id);
 
@@ -1135,6 +1136,14 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
             line = (char*)malloc ( 50 * sizeof (char));
             sprintf(line, "bb%d:", bb->bb_no);
             add_assignment(line, last_block_no);
+            
+            if(get_block(last_block_no)->br1_no > 0)
+            {
+                line = (char*)malloc ( 50 * sizeof (char));
+                sprintf(line, "v%d := v%d", node->parent->parent->id, last_reg);
+                add_assignment(line, last_block_no);
+            }
+            
         }
         
     }
