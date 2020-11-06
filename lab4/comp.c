@@ -544,7 +544,7 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
             add_block("exit", block_end, -1, -1, header);
         }
         bb_num++;
-        last_block_no++;
+        last_block_no = bb_num;
         block_end--;
         no_if = 0;
   	}
@@ -560,7 +560,7 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
             add_block("exit", block_end, -1, -1, header);
         }
         bb_num++;
-        last_block_no++;
+        last_block_no = bb_num;
         block_end--;
         no_if = 0;
     }
@@ -667,7 +667,45 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
 		if (node->parent->ntoken == IF &&
 		   (get_child(node->parent, 2)==node || get_child(node->parent, 3) == node))
            {
+               if(node->parent->ntoken == LET && get_child(node->parent, 2) == node)
+           {
+               line = (char*)malloc ( 50 * sizeof (char));
+                sprintf(line, "v%d := v%d %s v%d", node->id, get_child(node,1)->id, node->token, get_child(node,2)->id);
+                add_assignment(line, last_block_no);
+
+                if(DEBUGMODE)
+                    printf(" v%d := v%d %s v%d\n",node->id, get_child(node,1)->id, node->token, get_child(node,2)->id);
+                
+                last_reg = get_child(node->parent,1)->id;
                 //line = malloc(strlen(line));
+               
+                line = (char*)malloc ( 50 * sizeof (char));
+                sprintf(line, "v%d := v%d", get_child(node->parent,1)->id, node->id);
+                add_assignment(line, last_block_no);
+                
+                if(DEBUGMODE)
+                    printf(" v%d := v%d\n", get_child(node->parent,1)->id, node->id);
+                
+                last_reg = get_child(node->parent,1)->id;
+
+           }
+		    else if(node->parent->ntoken == LET && get_child(node->parent, 3) == node)
+           {
+               line = (char*)malloc ( 50 * sizeof (char));
+                sprintf(line, "v%d := v%d %s v%d", node->parent->id, get_child(node,1)->id, node->token, get_child(node,2)->id);
+                add_assignment(line, last_block_no);
+                
+                if(DEBUGMODE)
+                    printf(" v%d := v%d %s v%d\n",node->parent->id, get_child(node,1)->id, node->token, get_child(node,2)->id);
+                
+                last_reg = node->parent->id;
+                //line = malloc(strlen(line));
+                last_reg = node->parent->id;
+
+           }	
+           else 
+           {
+               //line = malloc(strlen(line));
                 line = (char*)malloc ( 50 * sizeof (char));
                 sprintf(line, "v%d := v%d %s v%d", node->parent->id, get_child(node,1)->id, node->token, get_child(node,2)->id);
                 add_assignment(line, last_block_no);
@@ -676,6 +714,7 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
                     printf(" v%d := v%d %s v%d\n",node->parent->id, get_child(node,1)->id, node->token, get_child(node,2)->id);
                 
                 last_reg = node->parent->id;
+           }
            }
 			else if(node->parent->ntoken == LET && get_child(node->parent, 2) == node)
            {
