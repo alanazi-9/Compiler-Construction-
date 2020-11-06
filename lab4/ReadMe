@@ -16,5 +16,5 @@ To get the pdf file of CFG:
 dot -Tpdf cfg.dot -o cfg.pdf
 
 ## KNOWN ISSUES:
-* somtimes the instructions in the join block is lost
+* somtimes the instructions in the join block is lost [Fixed in Update 1.2.x]
 * In 'print' and 'eval' the first child/grand_child node is missing [Fixed in Update 1.1]
