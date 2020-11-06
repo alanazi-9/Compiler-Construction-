@@ -4,6 +4,11 @@ make
 To run:
 ./comp < inputfile
 
+After compiling, 3 files will be generated:
+* ast.dot [Contains nodes information formatted for dot to be graphed]
+* cfg.dot [Contains nodes information formatted for dot to be graphed]
+* instructions.s [Contains instructions information]
+
 To get the pdf file of AST:
 dot -Tpdf ast.dot -o ast.pdf
 
