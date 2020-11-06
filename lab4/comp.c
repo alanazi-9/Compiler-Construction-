@@ -98,7 +98,7 @@ void free_everything()
 }
 void instructions_to_file()
 {
-    FILE* instructions = fopen("instructios.s", "w");
+    FILE* instructions = fopen("instructions.s", "w");
     struct block* block = block_head;
     struct assignment *assignment = block->assignment_head;
 
