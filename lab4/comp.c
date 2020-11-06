@@ -1209,7 +1209,7 @@ int assign_a_reg(char* name, int reg, int define_id, int let_id)
     }
     else 
     {
-        printf("token: %s\n", node->token);
+        //printf("token: %s\n", node->token);
         if(find_ast_node(last_define_fun_id)->ntoken == PRINT)
         {
             if(DEBUGMODE)
