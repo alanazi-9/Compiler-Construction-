@@ -1,0 +1,4 @@
+(define-fun (mixfun (ivar int) (bvar bool)) int 
+    (if bvar (if (< ivar 10) (+ ivar 4) (- ivar 8))
+    (if (> ivar 5) 4 5)))
+(eval (mixfun (get-int) true))

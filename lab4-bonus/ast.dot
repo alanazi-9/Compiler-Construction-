@@ -1,0 +1,57 @@
+digraph print {
+ 1 [label="mixfun", fontname="monospace"];
+ 2 [label="ivar", fontname="monospace"];
+ 3 [label="bvar", fontname="monospace"];
+ 4 [label="ret INT", fontname="monospace"];
+ 5 [label="bvar", fontname="monospace"];
+ 6 [label="ivar", fontname="monospace"];
+ 7 [label="10", fontname="monospace"];
+ 8 [label="LT", fontname="monospace", style=filled, fillcolor=mintcream];
+ 8->6
+ 8->7
+ 9 [label="ivar", fontname="monospace"];
+ 10 [label="4", fontname="monospace"];
+ 11 [label="PLUS", fontname="monospace", style=filled, fillcolor=mintcream];
+ 11->9
+ 11->10
+ 12 [label="ivar", fontname="monospace"];
+ 13 [label="8", fontname="monospace"];
+ 14 [label="MINUS", fontname="monospace", style=filled, fillcolor=mintcream];
+ 14->12
+ 14->13
+ 15 [label="IF", fontname="monospace", style=filled, fillcolor=mintcream];
+ 15->8
+ 15->11
+ 15->14
+ 16 [label="ivar", fontname="monospace"];
+ 17 [label="5", fontname="monospace"];
+ 18 [label="GT", fontname="monospace", style=filled, fillcolor=mintcream];
+ 18->16
+ 18->17
+ 19 [label="4", fontname="monospace"];
+ 20 [label="5", fontname="monospace"];
+ 21 [label="IF", fontname="monospace", style=filled, fillcolor=mintcream];
+ 21->18
+ 21->19
+ 21->20
+ 22 [label="IF", fontname="monospace", style=filled, fillcolor=mintcream];
+ 22->5
+ 22->15
+ 22->21
+ 23 [label="EVAL", fontname="monospace"];
+ 24 [label="GET-INT", fontname="monospace"];
+ 25 [label="TRUE", fontname="monospace"];
+ 26 [label="mixfun", fontname="monospace", style=filled, fillcolor=mintcream];
+ 26->24
+ 26->25
+ 27 [label="ENTRY", fontname="monospace", style=filled, fillcolor=mintcream];
+ 27->23
+ 27->26
+ 28 [label="DEF-FUN", fontname="monospace", style=filled, fillcolor=mintcream];
+ 28->1
+ 28->2
+ 28->3
+ 28->4
+ 28->22
+ }
+ 
