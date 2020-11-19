@@ -1,0 +1,39 @@
+digraph print {
+ 1 [label="mixfun", fontname="monospace"];
+ 2 [label="ivar", fontname="monospace"];
+ 3 [label="bvar", fontname="monospace"];
+ 4 [label="ret INT", fontname="monospace"];
+ 5 [label="1", fontname="monospace"];
+ 6 [label="3", fontname="monospace"];
+ 7 [label="5", fontname="monospace"];
+ 8 [label="2", fontname="monospace"];
+ 9 [label="3", fontname="monospace"];
+ 10 [label="MULT", fontname="monospace", style=filled, fillcolor=mintcream];
+ 10->8
+ 10->9
+ 11 [label="4", fontname="monospace"];
+ 12 [label="MULT", fontname="monospace", style=filled, fillcolor=mintcream];
+ 12->6
+ 12->7
+ 12->10
+ 12->11
+ 13 [label="MULT", fontname="monospace", style=filled, fillcolor=mintcream];
+ 13->5
+ 13->12
+ 14 [label="EVAL", fontname="monospace"];
+ 15 [label="GET-INT", fontname="monospace"];
+ 16 [label="TRUE", fontname="monospace"];
+ 17 [label="mixfun", fontname="monospace", style=filled, fillcolor=mintcream];
+ 17->15
+ 17->16
+ 18 [label="ENTRY", fontname="monospace", style=filled, fillcolor=mintcream];
+ 18->14
+ 18->17
+ 19 [label="DEF-FUN", fontname="monospace", style=filled, fillcolor=mintcream];
+ 19->1
+ 19->2
+ 19->3
+ 19->4
+ 19->13
+ }
+ 
