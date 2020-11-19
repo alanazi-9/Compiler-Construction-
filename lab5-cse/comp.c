@@ -559,6 +559,8 @@ int CSE() {
 		asgn = asgn->next;
 
     clear_list_T();
+  }
+
 }
 
 int main (int argc, char **argv) {
@@ -575,7 +577,7 @@ int main (int argc, char **argv) {
     return 1;
   }
 
-  if (strcmp(argv[1] != NULL && argv[1], "--cse") == 0) 
+  if (strcmp(argv[1], "--cse") == 0) 
   {
     printf("\nWith Common Subexpression Elimination");
     CSE();
@@ -598,5 +600,4 @@ int main (int argc, char **argv) {
 
   free_ast();
   return retval;
-}
 }
