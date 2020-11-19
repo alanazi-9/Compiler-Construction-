@@ -460,11 +460,37 @@ void print_interm() {
   printf("br exit\n");
 }
 
+struct t{
+	int lhs;
+	int var1;
+	int op;
+	int var2;
+	bool lhschanged;
+	bool var1changed;
+	bool var2changed;
+	struct t* next;
+};
+
 struct t* T = NULL;
+
+struct t* add_to_T(int reg, int var1, int op, int var2)
+{
+	struct t* t_reg = malloc(sizeof(struct t));
+	t_reg->lhs = reg;
+	t_reg->var1 = var1;
+	t_reg->op = op;
+	t_reg->var2 = var2;
+	t_reg->lhschanged = false;
+	t_reg->var1changed = false;
+	t_reg->var2changed = false;
+	t_reg->next = T;
+	return t_reg;
+}
 
 int find_common_T(int var1, int op, int var2)
 {
-	struct t* itr = T;
+	struct t* itr;
+  itr = T;
 	itr = itr->next;
 	while (itr != NULL)
 	{
@@ -557,4 +583,3 @@ int main (int argc, char **argv) {
   return retval;
 }
 }
-
