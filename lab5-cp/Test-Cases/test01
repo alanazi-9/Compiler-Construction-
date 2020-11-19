@@ -1,0 +1,2 @@
+(define-fun (mixfun (ivar int) (bvar bool)) int (* 1 (* 3 5 (* 2 3) 4)))
+(eval (mixfun (get-int) true))
