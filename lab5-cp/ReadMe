@@ -1,4 +1,4 @@
-Known issues:
+Known issue:
   * The only issue: When an operation (+, *, AND, OR) has more than two operands and the third or any operand after it is not a CONST, cp optimization doesn't work properl.
   
  To run it with Constant Propagation optimization, run the program with the option "--cp" as following:
