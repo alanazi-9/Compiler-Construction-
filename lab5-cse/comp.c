@@ -508,9 +508,26 @@ int find_common_T(int var1, int op, int var2)
 
 void update_list_T(int reg, int var1, int op, int var2)
 {
-	T = add_to_T(reg, var1, op, var2); //add to our list of assignments
+	T = add_to_T(reg, var1, op, var2);
 	update_bool_T(reg);
 }
+
+void update_bool_T(int reg)
+{
+	struct t* itr = T;
+	itr = itr->next;
+	while (itr != NULL)
+	{
+		if (itr->lhs == reg)
+			itr->lhschanged = true;
+		if (itr->var1 == reg)
+			itr->var1changed = true;
+		if (itr->var2 == reg)
+			itr->var2changed = true;
+		itr = itr->next;
+	}
+}
+
 
 void clear_list_T() 
 {
