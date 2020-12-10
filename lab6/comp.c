@@ -577,10 +577,10 @@ void print_interm() {
         print_int(regs);
 
         add_regs(regs);
-        printf("\nentry:\n", fun_name);
+        printf("\nentry:\n");
 
         fprintf(regs_alloc,"\nfunction %s\n\n", fun_name);
-        fprintf(regs_alloc,"entry:\n", fun_name);
+        fprintf(regs_alloc,"entry:\n");
       } else {
         printf("bb%d:\n", br->id);
         fprintf(regs_alloc,"bb%d:\n", br->id);
@@ -871,9 +871,9 @@ int write_s_file()
       fprintf (s_file,".bb_%s:\n", find_istr(ifun_r, bb_root->id));
   }
 
-  fprintf(s_file,"\tpushq %rbp\n");
-  fprintf(s_file,"\tmovq  %rsp, %rbp\n");
-  fprintf(s_file,"\tsubq  $64, %rsp\n");
+  fprintf(s_file,"\tpushq %%rbp\n");
+  fprintf(s_file,"\tmovq  %%rsp, %%rbp\n");
+  fprintf(s_file,"\tsubq  $64, %%rsp\n");
 
   struct asgn_instr* asgn = asgn_root;
   struct br_instr* br = bb_root;
@@ -921,9 +921,9 @@ int write_s_file()
           fprintf (s_file,".bb_%s:\n", fun_name);
         }
 
-        fprintf(s_file,"\tpushq %rbp\n");
-        fprintf(s_file,"\tmovq  %rsp, %rbp\n");
-        fprintf(s_file,"\tsubq  $64, %rsp\n");
+        fprintf(s_file,"\tpushq %%rbp\n");
+        fprintf(s_file,"\tmovq  %%rsp, %%rbp\n");
+        fprintf(s_file,"\tsubq  $64, %%rsp\n");
         /*
         fprintf (s_file,"\n%s:\n", fun_name);
         fprintf (s_file,".bb_%s:\n", fun_name);
@@ -1009,7 +1009,7 @@ int write_s_file()
       else if (asgn->type == LE) {
         fprintf(s_file,"\tcmpq %s, %s\n", get_general_reg(asgn->op2), get_general_reg(asgn->op1));
         fprintf(s_file,"\tsetle %%al\n");
-        fprintf(s_file,"\tmovzbl %al, %s\n", get_general_reg(asgn->lhs));
+        fprintf(s_file,"\tmovzbl %%al, %s\n", get_general_reg(asgn->lhs));
       }
         
       else if (asgn->type == MULT){
@@ -1018,16 +1018,16 @@ int write_s_file()
       }
         
       else if (asgn->type == DIV){
-        fprintf(s_file,"\tmovq %s, %rax\n", get_general_reg(asgn->op1));
-        fprintf(s_file,"\tmovq $0, %rdx\n");
+        fprintf(s_file,"\tmovq %s, %%rax\n", get_general_reg(asgn->op1));
+        fprintf(s_file,"\tmovq $0, %%rdx\n");
         fprintf(s_file,"\tdivq %s\n", get_general_reg(asgn->op2));
-        fprintf(s_file,"\tmovq %rax, %s\n", get_general_reg(asgn->lhs));
+        fprintf(s_file,"\tmovq %%rax, %s\n", get_general_reg(asgn->lhs));
       }
       else if (asgn->type == MOD){
-        fprintf(s_file,"\tmovq %s, %rax\n", get_general_reg(asgn->op1));
-        fprintf(s_file,"\tmovq $0, %rdx\n");
+        fprintf(s_file,"\tmovq %s, %%rax\n", get_general_reg(asgn->op1));
+        fprintf(s_file,"\tmovq $0, %%rdx\n");
         fprintf(s_file,"\tdivq %s\n", get_general_reg(asgn->op2));
-        fprintf(s_file,"\tmovq %rdx, %s\n", get_general_reg(asgn->lhs));
+        fprintf(s_file,"\tmovq %%rdx, %s\n", get_general_reg(asgn->lhs));
       }
         
       else if (asgn->type == GT){
@@ -1052,7 +1052,7 @@ int write_s_file()
       fprintf(s_file,"\tcall %s \n", asgn->fun);
       if (strcmp(asgn->fun, "print") != 0)
       {
-        fprintf(s_file,"\tmovq %rax, %s\n", get_general_reg(asgn->lhs));
+        fprintf(s_file,"\tmovq %%rax, %s\n", get_general_reg(asgn->lhs));
       }
     }
     asgn = asgn->next;
