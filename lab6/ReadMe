@@ -1,9 +1,12 @@
 To run the compiler:
-1- run 'make'
-2- run './comp.c < input_file', note: 'input_file' is the source code to be compiled
+1- Run 'make'
+2- Run './comp.c < input_file', note: 'input_file' is the source code to be compiled
 3- After that, 2 file will be generated:
     *file_1: 'regs_alloc.interm' which is the UnSSA intermediate representation (IR).
     *file_2: 'prog.s' which is the the assimbly code.
+4- To compile 'prog.s', run the command below:
+   gcc prog.s
+5- Lastly, execute it as the following: ./a.out
 
 NOTE: 
 - 'x86_aux_stuff.file' must be exist in the same directory where 'comp' is exist.
