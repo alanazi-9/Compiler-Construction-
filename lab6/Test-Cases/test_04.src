@@ -1,0 +1,3 @@
+(define-fun (name (v1 int) (v2 bool)) int
+  (if (> v1 0) (mod v1 2) v1))
+(eval (name (get-int) false))
