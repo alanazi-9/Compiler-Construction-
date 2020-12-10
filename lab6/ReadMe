@@ -1,0 +1,11 @@
+To run the compiler:
+1- run 'make'
+2- run './comp.c < input_file', note: 'input_file' is the source code to be compiled
+3- After that, 2 file will be generated:
+    *file_1: 'regs_alloc.interm' which is the UnSSA intermediate representation (IR).
+    *file_2: 'prog.s' which is the the assimbly code.
+
+NOTE: 
+- 'x86_aux_stuff.file' must be exist in the same directory where 'comp' is exist.
+- In 'makefile' file we used flag '-std=c99' to make it work on linprog.
+- We added 'get_bool' function to 'x86_aux_stuff.file' in addition to those ones that Prof. Fedyukovic has provided.
