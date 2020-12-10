@@ -1,0 +1,3 @@
+(define-fun (f (b int) (i int)) int
+  (if (> b 10) (* b 2) (+ i 8)))
+(eval (f (get-int) (get-int)))
